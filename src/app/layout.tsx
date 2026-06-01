@@ -1,26 +1,82 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+// Self-hosted by Next at build time — no render-blocking external stylesheet,
+// no third-party privacy leak, and `display: swap` keeps LCP unblocked.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
+
+const TITLE = "Fondo Areñas · Explorador semántico";
+const DESCRIPTION =
+  "Explorador interactivo del grafo multidimensional del Fondo Fotográfico Areñas (1909–1935): fotografías, años, vestimenta y palabras HTR.";
+
 export const metadata: Metadata = {
-  title: "Fondo Areñas · Explorador semántico",
-  description:
-    "Explorador interactivo del grafo multidimensional del Fondo Fotográfico Areñas (1909–1935): fotografías, años, vestimenta y palabras HTR.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Explorador Fondo Areñas",
   authors: [{ name: "Pol Gubau", url: "https://polgubau.com" }],
+  creator: "Pol Gubau Amores",
+  keywords: [
+    "Fondo Areñas",
+    "humanidades digitales",
+    "TFM",
+    "grafo",
+    "ForceAtlas2",
+    "Sigma.js",
+    "fotografía histórica",
+    "HTR",
+  ],
   openGraph: {
-    title: "Fondo Areñas · Explorador semántico",
+    title: TITLE,
     description:
       "TFM en humanidades digitales — exploración interactiva del Fondo Fotográfico Areñas.",
+    url: SITE_URL,
+    siteName: "Fondo Areñas",
     type: "website",
+    locale: "es_ES",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Explorador semántico del Fondo Fotográfico Areñas",
+      },
+    ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.png"],
+  },
+  robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const viewport: Viewport = {
+  themeColor: "#0a0a0b",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="es" className="dark">
-      <head>
-        <link rel="preconnect" href="https://rsms.me/" />
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-      </head>
+    <html lang="es" className={`dark ${inter.variable}`}>
       <body className="overflow-hidden">{children}</body>
     </html>
   );

@@ -52,25 +52,33 @@ const RELATIONS: ReadonlySet<Relation> = new Set([
 const RANDOM_SEED = 42;
 const RANDOM_LAYOUT_SCALE = 1000;
 
-// ForceAtlas2 — Gephi-like settings to surface clear community blobs:
+// ForceAtlas2 — tuned for clear community blobs:
 //   - linLogMode + outboundAttractionDistribution: spread communities apart
 //     and stop hubs from absorbing their neighbours.
-//   - gravity 1, scalingRatio 2: standard Gephi defaults with linLog.
+//   - gravity 0.08: very low pull toward center lets communities drift apart.
+//   - scalingRatio 8: stronger repulsion between unconnected nodes.
+//   - FA2 runs on a layout-only clone with `mismo_año` edges removed so that
+//     the 1 596 same-year photo↔photo edges don't collapse all años into one blob.
 //   - Two passes: a long shape-finding pass first, then a shorter refine
 //     pass with adjustSizes so radii match what Sigma will actually render.
-const FA2_SHAPE_ITERATIONS = 1500;
+const FA2_SHAPE_ITERATIONS = 2000;
 const FA2_REFINE_ITERATIONS = 500;
 const FA2_BASE_SETTINGS = {
 	linLogMode: true,
 	outboundAttractionDistribution: true,
-	gravity: 1,
-	scalingRatio: 2,
+	gravity: 0.08,
+	scalingRatio: 8,
 	strongGravityMode: false,
 	barnesHutOptimize: true,
 	barnesHutTheta: 0.8,
 	edgeWeightInfluence: 1,
 	slowDown: 1,
 } as const;
+
+// Community expansion factor — after FA2, each community centroid is pushed
+// radially away from the global centroid by this multiplier.  0 = off, 1 = full
+// distance duplication.  0.5 gives visible separation without destroying shape.
+const COMMUNITY_EXPANSION_K = 0.5;
 
 // Anti-collision pass: ratio is derived from the layout's actual coordinate
 // span so node sizes map cleanly into graph units regardless of FA2 scale.
@@ -142,10 +150,18 @@ const IMAGES_DIR = join(ROOT, "public", "images-thumb");
 const IMAGES_PUBLIC_PREFIX = "/images-thumb";
 const OUT_DIR = join(ROOT, "public", "data");
 
+// Strips a UTF-8 BOM (U+FEFF) prefix — Excel and other editors add one on
+// export and it silently corrupts the first header name.
+function stripBom(text: string): string {
+	return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
 function parseCsv(text: string): Record<string, string>[] {
-	const lines = text.split(/\r?\n/).filter(Boolean);
-	if (lines.length === 0) return [];
-	const headers = splitCsvLine(lines[0]);
+	const clean = stripBom(text);
+	const lines = clean.split(/\r?\n/).filter(Boolean);
+	const header = lines[0];
+	if (!header) return [];
+	const headers = splitCsvLine(header);
 	return lines.slice(1).map((line) => {
 		const values = splitCsvLine(line);
 		return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
@@ -186,47 +202,111 @@ function main() {
 	// 1. Random seed (Gephi-style). A circular seed locks nodes into a donut;
 	//    a random seed lets FA2 form natural community blobs.
 	console.log("→ Seeding with random layout…");
-	random.assign(graph, { scale: 1000, rng: seededRandom(42) });
+	random.assign(graph, {
+		scale: RANDOM_LAYOUT_SCALE,
+		rng: seededRandom(RANDOM_SEED),
+	});
 
 	// 2. Pre-assign sizes so FA2 (adjustSizes) and noverlap respect them.
+	//    `degree_static` (from the GEXF) is preferred over the runtime degree
+	//    because it represents the *original* multidimensional degree from
+	//    Gephi, before any filtering — the value the visual hierarchy was
+	//    designed against.
 	graph.forEachNode((node, attrs) => {
 		const degree = Number(attrs.degree_static ?? graph.degree(node));
-		const dimension = (attrs.dimension as Dimension) ?? "imagen";
+		const dimension = assertDimension(attrs.dimension, node);
 		graph.setNodeAttribute(node, "size", nodeSize(dimension, degree));
 	});
 
-	// 3. ForceAtlas2 — Gephi-like settings for clear community blobs:
-	//    - linLogMode + outboundAttractionDistribution: spread communities and
-	//      stop hubs from absorbing their neighbours.
-	//    - gravity 1, scalingRatio 2: standard Gephi defaults with linLog —
-	//      strong enough to form cohesive blobs without central pile-up.
-	//    - Two passes: a long shape-finding pass first, then a shorter refine
-	//      pass with adjustSizes for honest visual radii.
-	const fa2Base = {
-		linLogMode: true,
-		outboundAttractionDistribution: true,
-		gravity: 1,
-		scalingRatio: 2,
-		strongGravityMode: false,
-		barnesHutOptimize: true,
-		barnesHutTheta: 0.8,
-		edgeWeightInfluence: 1,
-		slowDown: 1,
-	} as const;
-	console.log("→ Running ForceAtlas2 (shape pass, 1500 it.)…");
-	forceAtlas2.assign(graph, {
-		iterations: 1500,
-		settings: { ...fa2Base, adjustSizes: false },
+	// Build a layout-only clone that omits `mismo_año` edges.
+	// Those 1 596 photo↔photo edges act as strong attractors and collapse all
+	// years into a single central mass.  We keep them in the full graph (for
+	// the JSON output) but exclude them from the FA2 force computation.
+	console.log("→ Building layout clone (without mismo_año edges)…");
+	const layoutGraph = graph.copy();
+	const toRemove: string[] = [];
+	layoutGraph.forEachEdge((id, attrs) => {
+		if (attrs.relation === "mismo_año") toRemove.push(id);
 	});
-	console.log("→ Running ForceAtlas2 (refine pass, 500 it. + adjustSizes)…");
-	forceAtlas2.assign(graph, {
-		iterations: 500,
-		settings: { ...fa2Base, adjustSizes: true },
+	for (const id of toRemove) layoutGraph.dropEdge(id);
+	console.log(`  Removed ${toRemove.length} mismo_año edges from layout clone`);
+
+	console.log(
+		`→ Running ForceAtlas2 (shape pass, ${FA2_SHAPE_ITERATIONS} it.)…`,
+	);
+	forceAtlas2.assign(layoutGraph, {
+		iterations: FA2_SHAPE_ITERATIONS,
+		settings: { ...FA2_BASE_SETTINGS, adjustSizes: false },
+	});
+	console.log(
+		`→ Running ForceAtlas2 (refine pass, ${FA2_REFINE_ITERATIONS} it. + adjustSizes)…`,
+	);
+	forceAtlas2.assign(layoutGraph, {
+		iterations: FA2_REFINE_ITERATIONS,
+		settings: { ...FA2_BASE_SETTINGS, adjustSizes: true },
 	});
 
-	// 4. Anti-collision pass — eliminates residual node overlap without
-	//    destroying the FA2 cluster structure. Ratio is derived from the
-	//    layout's actual coordinate span so node sizes map into graph units.
+	// Copy FA2 positions back onto the full graph.
+	layoutGraph.forEachNode((id, attrs) => {
+		graph.setNodeAttribute(id, "x", attrs.x);
+		graph.setNodeAttribute(id, "y", attrs.y);
+	});
+
+	// 3. Community expansion: push each community centroid radially away from
+	//    the global centroid.  This separates blobs without touching local shape.
+	console.log("→ Applying community expansion…");
+	const communityNodes = new Map<number, string[]>();
+	graph.forEachNode((id, attrs) => {
+		const c = Number(attrs.community ?? 0);
+		const bucket = communityNodes.get(c) ?? [];
+		bucket.push(id);
+		communityNodes.set(c, bucket);
+	});
+
+	// Global centroid.
+	let gx = 0;
+	let gy = 0;
+	graph.forEachNode((_id, attrs) => {
+		gx += Number(attrs.x);
+		gy += Number(attrs.y);
+	});
+	gx /= graph.order;
+	gy /= graph.order;
+
+	for (const [, ids] of communityNodes) {
+		// Community centroid.
+		let cx = 0;
+		let cy = 0;
+		for (const id of ids) {
+			cx += Number(graph.getNodeAttribute(id, "x"));
+			cy += Number(graph.getNodeAttribute(id, "y"));
+		}
+		cx /= ids.length;
+		cy /= ids.length;
+
+		const dx = cx - gx;
+		const dy = cy - gy;
+
+		// Shift every node in this community by K * (centroid − global).
+		for (const id of ids) {
+			graph.setNodeAttribute(
+				id,
+				"x",
+				Number(graph.getNodeAttribute(id, "x")) + dx * COMMUNITY_EXPANSION_K,
+			);
+			graph.setNodeAttribute(
+				id,
+				"y",
+				Number(graph.getNodeAttribute(id, "y")) + dy * COMMUNITY_EXPANSION_K,
+			);
+		}
+	}
+	console.log(
+		`  Expanded ${communityNodes.size} communities (k=${COMMUNITY_EXPANSION_K})`,
+	);
+
+	// 3. Anti-collision pass — eliminates residual node overlap without
+	//    destroying the FA2 cluster structure.
 	let minX = Number.POSITIVE_INFINITY;
 	let maxX = Number.NEGATIVE_INFINITY;
 	let minY = Number.POSITIVE_INFINITY;
@@ -241,16 +321,16 @@ function main() {
 	});
 	const span = Math.max(maxX - minX, maxY - minY) || 1;
 	const meanSpacing = span / Math.sqrt(graph.order);
-	const noverlapRatio = meanSpacing / 30;
+	const noverlapRatio = meanSpacing / NOVERLAP_RATIO_DIVISOR;
 	console.log("→ Running noverlap (anti-collision)…");
 	noverlap.assign(graph, {
-		maxIterations: 200,
+		maxIterations: NOVERLAP_ITERATIONS,
 		settings: {
 			ratio: noverlapRatio,
-			margin: noverlapRatio * 2,
-			expansion: 1.2,
-			gridSize: 50,
-			speed: 4,
+			margin: noverlapRatio * NOVERLAP_MARGIN_FACTOR,
+			expansion: NOVERLAP_EXPANSION,
+			gridSize: NOVERLAP_GRID_SIZE,
+			speed: NOVERLAP_SPEED,
 		},
 	});
 
@@ -260,7 +340,7 @@ function main() {
 		nodes.push({
 			id,
 			label: String(attrs.label ?? attrs.title ?? id),
-			dimension: (attrs.dimension as Dimension) ?? "imagen",
+			dimension: assertDimension(attrs.dimension, id),
 			community: Number(attrs.community ?? 0),
 			degree: Number(attrs.degree_static ?? graph.degree(id)),
 			x: Number(attrs.x),
@@ -274,18 +354,18 @@ function main() {
 	});
 
 	const edges: GraphEdge[] = [];
-	graph.forEachEdge((_id, attrs, source, target) => {
+	graph.forEachEdge((id, attrs, source, target) => {
 		edges.push({
 			source,
 			target,
-			relation: (attrs.relation as Relation) ?? "mismo_año",
+			relation: assertRelation(attrs.relation, `${source}→${target} (${id})`),
 		});
 	});
 
 	const graphData: GraphData = { nodes, edges };
 
 	// Build images-index — prefer CSV when available, otherwise fall back to
-	// whatever images live in public/images-iaah (matched by filename = node id).
+	// whatever images live in public/images-thumb (matched by node id).
 	const imagesIndex: ImagesIndex = {};
 
 	if (existsSync(CSV_PATH)) {
@@ -308,17 +388,17 @@ function main() {
 	}
 
 	if (existsSync(IMAGES_DIR)) {
-		// The thumb dir stores `.webp` files; node ids are the original `.jpg`
-		// filenames, so we strip the extension to match.
-		// Some collections use variant suffixes (e.g. `_ma` for Gudiol scans);
-		// we probe a list of candidates so the mapping is suffix-agnostic.
+		// Node ids are the original `.jpg` filenames; thumbs are `.webp`.
+		// Probe a small ordered list of suffix variants so the mapping is
+		// suffix-agnostic across collections.
 		const local = new Set(readdirSync(IMAGES_DIR));
 		let matched = 0;
 		graph.forEachNode((id, attrs) => {
-			if ((attrs.dimension as Dimension) !== "imagen") return;
+			if (assertDimension(attrs.dimension, id) !== "imagen") return;
 			const base = id.replace(/\.[^.]+$/, "");
-			// Probe order: exact match first, then known suffix variants.
-			const candidates = [`${base}.webp`, `${base}_ma.webp`];
+			const candidates = THUMB_SUFFIX_VARIANTS.map(
+				(suffix) => `${base}${suffix}.${THUMB_EXTENSION}`,
+			);
 			const thumbName = candidates.find((c) => local.has(c));
 			if (!thumbName) return;
 			const existing = imagesIndex[id];
@@ -358,4 +438,10 @@ function main() {
 	console.log(`✓ Wrote ${OUT_DIR}/images-index.json`);
 }
 
-main();
+try {
+	main();
+} catch (err) {
+	console.error("\n✗ parse-gexf failed:");
+	console.error(err instanceof Error ? err.message : err);
+	process.exit(1);
+}

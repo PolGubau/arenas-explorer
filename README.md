@@ -10,11 +10,11 @@ Visualización interactiva del grafo multidimensional construido a partir del
 El grafo conecta **564 fotografías históricas** con tres dimensiones extraídas
 mediante visión por computador y HTR:
 
-| Dimensión | Fuente | Nodos |
-|-----------|--------|-------|
-| Año predicho | clasificador de fechas | 17 hubs temporales |
-| Vestimenta | detección automática de prendas | 32 prendas |
-| Palabras (HTR) | transcripción del manuscrito | 127 palabras |
+| Dimensión      | Fuente                          | Nodos              |
+| -------------- | ------------------------------- | ------------------ |
+| Año predicho   | clasificador de fechas          | 17 hubs temporales |
+| Vestimenta     | detección automática de prendas | 32 prendas         |
+| Palabras (HTR) | transcripción del manuscrito    | 127 palabras       |
 
 ## Stack
 
@@ -55,11 +55,11 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 ### Scripts
 
-| Script | Descripción |
-|--------|-------------|
-| `npm run dev` | Servidor Next.js · regenera graph.json antes de arrancar |
-| `npm run build` | Build de producción |
-| `npm run start` | Sirve el build |
+| Script                    | Descripción                                                           |
+| ------------------------- | --------------------------------------------------------------------- |
+| `npm run dev`             | Servidor Next.js · regenera graph.json antes de arrancar              |
+| `npm run build`           | Build de producción                                                   |
+| `npm run start`           | Sirve el build                                                        |
 | `npm run optimize:images` | Genera `public/images-thumb/*.webp` a partir de `public/images-iaah/` |
 
 ## Despliegue
@@ -73,3 +73,13 @@ El proyecto está pensado para Vercel: importa el repo en
 Desarrollado por **[polgubau.com](https://polgubau.com)** como módulo de
 visualización del TFM. Datos y modelos del Fondo Areñas — Arxiu en Línia de
 la Generalitat de Catalunya.
+
+## Licencia
+
+El código fuente es de **visualización libre** pero requiere atribución. Cualquier uso, adaptación o redistribución debe incluir crédito visible al autor original:
+
+> "Based on work by Pol Gubau Amores — [polgubau.com](https://polgubau.com)"
+
+Consulta el archivo [LICENSE](./LICENSE) para los términos completos.
+
+⚠️ **Las fotografías están protegidas.** Las imágenes del Fondo Areñas pertenecen al **Arxiu en Línia de la Generalitat de Catalunya** y **no se pueden descargar, copiar, redistribuir ni reutilizar** sin autorización expresa del titular de los derechos. La licencia de este repositorio cubre **únicamente** el código fuente.

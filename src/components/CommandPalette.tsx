@@ -59,6 +59,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 		const out: Hit[] = [];
 		for (let i = 0; i < index.length && out.length < MAX_RESULTS; i++) {
 			const h = index[i];
+			if (!h) continue;
 			if (h.label.toLowerCase().includes(q) || h.id.toLowerCase().includes(q)) {
 				out.push(h);
 			}

@@ -97,7 +97,11 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 		<div className="flex h-dvh w-screen flex-col bg-[var(--color-bg)]">
 			<Header onOpenPalette={openPalette} onOpenMissing={openMissing} />
 			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(320px,28rem)]">
-				<section className="relative min-h-0 overflow-hidden">
+				<section
+					className="relative min-h-0 overflow-hidden"
+					aria-label="Grafo interactivo del Fondo Fotográfico Areñas"
+					role="application"
+				>
 					<div className="absolute left-3 right-3 top-3 z-10 sm:left-4 sm:right-4 sm:top-4">
 						<LayerFilter />
 					</div>

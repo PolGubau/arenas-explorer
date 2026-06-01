@@ -43,7 +43,8 @@ export function useGraphData(): UseGraphDataResult {
 				const g = new Graph({ multi: false, type: "undirected" });
 
 				for (const n of data.nodes) {
-					const hasImage = n.dimension === "imagen" && !!index[n.id]?.url;
+					const imageMeta = index[n.id];
+					const hasImage = n.dimension === "imagen" && !!imageMeta?.url;
 					g.addNode(n.id, {
 						label: n.label,
 						dimension: n.dimension,
@@ -57,7 +58,7 @@ export function useGraphData(): UseGraphDataResult {
 						color: DIMENSION_COLORS[n.dimension],
 						size: nodeSize(n.dimension, n.degree),
 						type: hasImage ? "image" : "circle",
-						...(hasImage ? { image: index[n.id].url } : {}),
+						...(hasImage && imageMeta ? { image: imageMeta.url } : {}),
 					});
 				}
 				for (const e of data.edges) {
