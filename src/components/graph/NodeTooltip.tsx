@@ -1,0 +1,74 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRegisterEvents, useSigma } from "@react-sigma/core";
+import { DIMENSION_COLORS, DIMENSION_LABELS } from "@/lib/constants";
+import type { Dimension } from "@/types/graph";
+
+interface TooltipState {
+  x: number;
+  y: number;
+  label: string;
+  dimension: Dimension;
+  meta?: string;
+}
+
+export function NodeTooltip() {
+  const sigma = useSigma();
+  const register = useRegisterEvents();
+  const [tip, setTip] = useState<TooltipState | null>(null);
+
+  useEffect(() => {
+    register({
+      enterNode: ({ node, event }) => {
+        const graph = sigma.getGraph();
+        const attrs = graph.getNodeAttributes(node);
+        const dimension = (attrs.dimension as Dimension) ?? "imagen";
+
+        let meta: string | undefined;
+        if (dimension === "imagen" && attrs.year) {
+          meta = `${attrs.year}${attrs.confianza ? ` · ${Math.round(attrs.confianza as number)}%` : ""}`;
+        } else if (dimension === "año" && attrs.n_fotos) {
+          meta = `${attrs.n_fotos} fotos`;
+        } else {
+          meta = `${graph.degree(node)} conexiones`;
+        }
+
+        setTip({
+          x: event.x,
+          y: event.y,
+          label: String(attrs.label ?? node),
+          dimension,
+          meta,
+        });
+      },
+      leaveNode: () => setTip(null),
+      mousemovebody: ({ x, y }) => {
+        setTip((t) => (t ? { ...t, x, y } : t));
+      },
+    });
+  }, [register, sigma]);
+
+  if (!tip) return null;
+
+  return (
+    <div
+      className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
+      style={{ left: tip.x + 14, top: tip.y + 14 }}
+    >
+      <div className="flex items-center gap-1.5">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: DIMENSION_COLORS[tip.dimension] }}
+        />
+        <span className="text-[10px] uppercase tracking-wide text-[var(--color-fg-subtle)]">
+          {DIMENSION_LABELS[tip.dimension]}
+        </span>
+      </div>
+      <div className="mt-1 truncate font-medium text-[var(--color-fg)]">{tip.label}</div>
+      {tip.meta && (
+        <div className="mt-0.5 text-[10px] text-[var(--color-fg-muted)]">{tip.meta}</div>
+      )}
+    </div>
+  );
+}

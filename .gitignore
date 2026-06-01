@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env*
+!.env.example
+.DS_Store
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+public/data/*.json
+# 2 GB of raw scans — only the optimised webp thumbs are checked in
+public/images-iaah/
