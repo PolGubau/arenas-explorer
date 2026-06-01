@@ -32,13 +32,17 @@ const GraphCanvas = dynamic(
 );
 
 export function AppShell() {
-	const { graph, imagesIndex, loading, error } = useGraphData();
+	const { graph, imagesIndex, communities, loading, error } = useGraphData();
 
 	if (error) return <ErrorState message={error.message} />;
 	if (loading || !graph) return <GlobalLoading />;
 
 	return (
-		<GraphDataProvider graph={graph} imagesIndex={imagesIndex}>
+		<GraphDataProvider
+			graph={graph}
+			imagesIndex={imagesIndex}
+			communities={communities}
+		>
 			<Suspense fallback={<GlobalLoading />}>
 				<MainLayout graph={graph} />
 			</Suspense>

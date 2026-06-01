@@ -12,8 +12,14 @@ import { Eye, EyeOff } from "@/lib/icons";
 import type { Dimension, Relation } from "@/types/graph";
 
 export function LayerFilter() {
-  const { activeLayers, toggleLayer, hiddenRelations, toggleRelation } =
-    useExplorerState();
+  const {
+    activeLayers,
+    toggleLayer,
+    hiddenRelations,
+    toggleRelation,
+    colorByCommunity,
+    toggleColorByCommunity,
+  } = useExplorerState();
 
   return (
     <div className="scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto sm:flex-wrap">
@@ -34,6 +40,31 @@ export function LayerFilter() {
           onClick={() => toggleRelation(rel)}
         />
       ))}
+      <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
+      <button
+        type="button"
+        onClick={toggleColorByCommunity}
+        aria-pressed={colorByCommunity}
+        title={colorByCommunity ? "Colorear por dimensión" : "Colorear por comunidad"}
+        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${colorByCommunity
+            ? "border-border-strong bg-[var(--color-bg-overlay)] text-fg"
+            : "border-border bg-transparent text-fg-muted hover:text-fg"
+          }`}
+      >
+        <span
+          aria-hidden
+          className="flex gap-0.5"
+        >
+          {["#E74C3C", "#3498DB", "#2ECC71", "#F1C40F"].map((c) => (
+            <span
+              key={c}
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: c, opacity: colorByCommunity ? 1 : 0.45 }}
+            />
+          ))}
+        </span>
+        <span>Comunidades</span>
+      </button>
     </div>
   );
 }

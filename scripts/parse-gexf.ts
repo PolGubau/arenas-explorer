@@ -21,6 +21,7 @@ import noverlap from "graphology-layout-noverlap";
 import random from "graphology-layout/random";
 
 import type {
+	CommunitySummary,
 	Dimension,
 	GraphData,
 	GraphEdge,
@@ -186,6 +187,85 @@ function splitCsvLine(line: string): string[] {
 	}
 	out.push(cur);
 	return out.map((s) => s.trim());
+}
+
+// Per-community summary used for the in-canvas labels.
+//   - label    → top 1–2 word/clothing nodes by degree
+//   - year     → most frequent año node in the community
+//   - centroid → average (x, y) AFTER layout + expansion + noverlap
+//   - size     → log-scaled by member count, used for label sizing
+function buildCommunitySummaries(graph: Graph): CommunitySummary[] {
+	interface Bucket {
+		ids: string[];
+		sx: number;
+		sy: number;
+		// degree-keyed top labels per relevant dimension
+		words: { label: string; degree: number }[];
+		years: Map<number, number>;
+	}
+	const buckets = new Map<number, Bucket>();
+
+	graph.forEachNode((id, attrs) => {
+		const c = Number(attrs.community ?? 0);
+		let b = buckets.get(c);
+		if (!b) {
+			b = { ids: [], sx: 0, sy: 0, words: [], years: new Map() };
+			buckets.set(c, b);
+		}
+		b.ids.push(id);
+		b.sx += Number(attrs.x);
+		b.sy += Number(attrs.y);
+
+		const dim = String(attrs.dimension);
+		const label = String(attrs.label ?? attrs.title ?? id);
+		const degree = Number(attrs.degree_static ?? graph.degree(id));
+
+		if (dim === "transcripcion" || dim === "vestimenta") {
+			b.words.push({ label, degree });
+		} else if (dim === "año") {
+			const y = Number(attrs.year ?? Number.parseInt(label, 10));
+			if (Number.isFinite(y)) {
+				b.years.set(y, (b.years.get(y) ?? 0) + degree);
+			}
+		}
+	});
+
+	const summaries: CommunitySummary[] = [];
+	for (const [id, b] of buckets) {
+		const n = b.ids.length;
+		b.words.sort((a, z) => z.degree - a.degree);
+		const topWords = b.words.slice(0, 3).map((w) => w.label);
+
+		let year: number | undefined;
+		let bestScore = -1;
+		for (const [y, score] of b.years) {
+			if (score > bestScore) {
+				bestScore = score;
+				year = y;
+			}
+		}
+
+		const label =
+			topWords.length > 0
+				? topWords.slice(0, 2).join(" · ")
+				: year != null
+					? String(year)
+					: `Comunidad ${id}`;
+
+		summaries.push({
+			id,
+			label,
+			x: b.sx / n,
+			y: b.sy / n,
+			size: n,
+			topWords,
+			...(year != null ? { year } : {}),
+		});
+	}
+
+	// Stable order — useful for downstream snapshot diffs.
+	summaries.sort((a, z) => a.id - z.id);
+	return summaries;
 }
 
 function main() {
@@ -362,7 +442,11 @@ function main() {
 		});
 	});
 
-	const graphData: GraphData = { nodes, edges };
+	// Compute per-community summary: representative label (top words by degree),
+	// dominant year, centroid (after layout + noverlap) and a rough span.
+	const communities = buildCommunitySummaries(graph);
+
+	const graphData: GraphData = { nodes, edges, communities };
 
 	// Build images-index — prefer CSV when available, otherwise fall back to
 	// whatever images live in public/images-thumb (matched by node id).

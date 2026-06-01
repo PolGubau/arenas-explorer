@@ -1,13 +1,14 @@
 "use client";
 
 import { DIMENSION_COLORS, nodeSize } from "@/lib/constants";
-import type { GraphData, ImagesIndex } from "@/types/graph";
+import type { CommunitySummary, GraphData, ImagesIndex } from "@/types/graph";
 import Graph from "graphology";
 import { useEffect, useState } from "react";
 
 interface UseGraphDataResult {
 	graph: Graph | null;
 	imagesIndex: ImagesIndex;
+	communities: CommunitySummary[];
 	loading: boolean;
 	error: Error | null;
 }
@@ -20,6 +21,7 @@ interface UseGraphDataResult {
 export function useGraphData(): UseGraphDataResult {
 	const [graph, setGraph] = useState<Graph | null>(null);
 	const [imagesIndex, setImagesIndex] = useState<ImagesIndex>({});
+	const [communities, setCommunities] = useState<CommunitySummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 
@@ -71,6 +73,7 @@ export function useGraphData(): UseGraphDataResult {
 				if (cancelled) return;
 				setGraph(g);
 				setImagesIndex(index);
+				setCommunities(data.communities ?? []);
 				setLoading(false);
 			} catch (e) {
 				if (cancelled) return;
@@ -84,5 +87,5 @@ export function useGraphData(): UseGraphDataResult {
 		};
 	}, []);
 
-	return { graph, imagesIndex, loading, error };
+	return { graph, imagesIndex, communities, loading, error };
 }

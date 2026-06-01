@@ -1,12 +1,13 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import type { CommunitySummary, ImagesIndex } from "@/types/graph";
 import type Graph from "graphology";
-import type { ImagesIndex } from "@/types/graph";
+import { createContext, useContext } from "react";
 
 interface GraphDataValue {
   graph: Graph;
   imagesIndex: ImagesIndex;
+  communities: CommunitySummary[];
 }
 
 const Ctx = createContext<GraphDataValue | null>(null);
@@ -14,13 +15,19 @@ const Ctx = createContext<GraphDataValue | null>(null);
 export function GraphDataProvider({
   graph,
   imagesIndex,
+  communities,
   children,
 }: {
   graph: Graph;
   imagesIndex: ImagesIndex;
+  communities: CommunitySummary[];
   children: React.ReactNode;
 }) {
-  return <Ctx.Provider value={{ graph, imagesIndex }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ graph, imagesIndex, communities }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useGraphContext(): GraphDataValue {
