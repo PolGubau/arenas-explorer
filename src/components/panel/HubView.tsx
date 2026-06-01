@@ -21,7 +21,7 @@ export function HubView({ icon, title, subtitle, photos }: HubViewProps) {
 	return (
 		<div className="px-5 pt-5 pb-6">
 			<header className="mb-4 flex items-start gap-3">
-				<span className="mt-0.5 text-[var(--color-fg-muted)]">{icon}</span>
+				<span className="mt-0.5 text-fg-muted">{icon}</span>
 				<div className="min-w-0 flex-1">
 					<h2 className="truncate text-base font-semibold text-fg">
 						{title}
@@ -49,7 +49,7 @@ export function HubView({ icon, title, subtitle, photos }: HubViewProps) {
 						<button
 							type="button"
 							onClick={() => setLimit((l) => l + STEP)}
-							className="mt-3 w-full rounded-md border border-border -elevated px-3 py-2 text-[11px] font-medium text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-fg"
+							className="mt-3 w-full rounded-md border border-border -elevated px-3 py-2 text-[11px] font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
 						>
 							Mostrar {Math.min(STEP, remaining)} más · {remaining} restantes
 						</button>

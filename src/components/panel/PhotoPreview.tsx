@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { ExternalLink, ImageIcon } from "@/lib/icons";
 import type { ImageMeta } from "@/types/graph";
+import { useState } from "react";
 
 interface PhotoPreviewProps {
 	id: string;
@@ -21,7 +21,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 				{showImage ? (
 					/* eslint-disable-next-line @next/next/no-img-element */
 					<img
-						src={meta!.url}
+						src={meta?.url}
 						alt={meta?.caption || id}
 						loading="lazy"
 						onError={() => setErrored(true)}
@@ -49,13 +49,13 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 						{id}
 					</p>
 				</div>
-				{meta?.url && meta.url.startsWith("http") && (
+				{meta?.url?.startsWith("http") && (
 					<a
 						href={meta.url}
 						target="_blank"
 						rel="noopener noreferrer"
 						title="Ver original"
-						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-fg"
+						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
 					>
 						<ExternalLink size={13} />
 					</a>
@@ -83,7 +83,7 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 	return (
 		<>
 			<dt className="text-fg-subtle">{label}</dt>
-			<dd className="truncate text-[var(--color-fg-muted)]" title={value}>
+			<dd className="truncate text-fg-muted" title={value}>
 				{value}
 			</dd>
 		</>

@@ -20,8 +20,8 @@ export function RelatedThumb({ id, size }: RelatedThumbProps) {
   // When `size` is omitted the thumb fills its grid cell as a square.
   const style = size ? { width: size, height: size } : undefined;
   const className = size
-    ? "group relative overflow-hidden rounded-md border border-border -elevated transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40"
-    : "group relative aspect-square w-full overflow-hidden rounded-md border border-border -elevated transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40";
+    ? "group relative overflow-hidden rounded-md border border-border -elevated transition-all hover:border-border-strong hover:ring-1 hover:ring-[var(--color-accent)]/40"
+    : "group relative aspect-square w-full overflow-hidden rounded-md border border-border -elevated transition-all hover:border-border-strong hover:ring-1 hover:ring-[var(--color-accent)]/40";
 
   return (
     <button

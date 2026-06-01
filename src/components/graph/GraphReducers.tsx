@@ -1,7 +1,7 @@
 "use client";
 
 import { useExplorerState } from "@/hooks/useExplorerState";
-import { RELATION_COLORS } from "@/lib/constants";
+import { RELATION_COLORS, RELATION_IDLE_COLORS } from "@/lib/constants";
 import { useGraphStore } from "@/store/graphStore";
 import type { Dimension, Relation } from "@/types/graph";
 import { useSetSettings, useSigma } from "@react-sigma/core";
@@ -12,7 +12,7 @@ const EDGE_DIM_COLOR = "#1c1c22";
 
 interface ReducerCtx {
   activeLayers: ReadonlySet<Dimension>;
-  showSameYear: boolean;
+  hiddenRelations: ReadonlySet<Relation>;
   hoveredNodeId: string | null;
   selectedNodeId: string | null;
 }
@@ -26,13 +26,13 @@ export function GraphReducers() {
   const sigma = useSigma();
   const setSettings = useSetSettings();
 
-  const { nodeId: selectedNodeId, activeLayers, showSameYear } =
+  const { nodeId: selectedNodeId, activeLayers, hiddenRelations } =
     useExplorerState();
   const hoveredNodeId = useGraphStore((s) => s.hoveredNodeId);
 
   const ctxRef = useRef<ReducerCtx>({
     activeLayers,
-    showSameYear,
+    hiddenRelations,
     hoveredNodeId,
     selectedNodeId,
   });
@@ -81,11 +81,11 @@ export function GraphReducers() {
       },
 
       edgeReducer: (edge, data) => {
-        const { activeLayers, showSameYear, hoveredNodeId } = ctxRef.current;
+        const { activeLayers, hiddenRelations, hoveredNodeId } = ctxRef.current;
         const rel = data.relation as Relation | undefined;
         const out = { ...data };
 
-        if (rel === "mismo_año" && !showSameYear) {
+        if (rel && hiddenRelations.has(rel)) {
           out.hidden = true;
           return out;
         }
@@ -105,11 +105,11 @@ export function GraphReducers() {
               ? RELATION_COLORS[rel]
               : "#3a3a44"
             : EDGE_DIM_COLOR;
-          out.size = touches ? 1.4 : 0.4;
+          out.size = touches ? 1.2 : 0.2;
           out.zIndex = touches ? 1 : 0;
         } else {
-          out.color = rel ? RELATION_COLORS[rel] : "#3a3a44";
-          out.size = 0.8;
+          out.color = rel ? RELATION_IDLE_COLORS[rel] : "#3a3a4420";
+          out.size = rel === "lleva_puesto" ? 0.3 : 0.5;
         }
 
         return out;
@@ -121,12 +121,12 @@ export function GraphReducers() {
   useEffect(() => {
     ctxRef.current = {
       activeLayers,
-      showSameYear,
+      hiddenRelations,
       hoveredNodeId,
       selectedNodeId,
     };
     sigma.refresh({ skipIndexation: true });
-  }, [sigma, activeLayers, showSameYear, hoveredNodeId, selectedNodeId]);
+  }, [sigma, activeLayers, hiddenRelations, hoveredNodeId, selectedNodeId]);
 
   return null;
 }

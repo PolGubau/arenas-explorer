@@ -69,7 +69,7 @@ function DetailHeader({ onClose }: { onClose?: () => void }) {
 					}}
 					aria-label="Cerrar panel"
 					title="Cerrar (Esc)"
-					className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:-elevated hover:text-fg"
+					className="flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:-elevated hover:text-fg"
 				>
 					<X size={14} />
 				</button>

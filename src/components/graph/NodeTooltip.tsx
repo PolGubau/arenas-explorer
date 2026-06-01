@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRegisterEvents, useSigma } from "@react-sigma/core";
 import { DIMENSION_COLORS, DIMENSION_LABELS } from "@/lib/constants";
 import type { Dimension } from "@/types/graph";
+import { useRegisterEvents, useSigma } from "@react-sigma/core";
+import { useEffect, useState } from "react";
 
 interface TooltipState {
   x: number;
@@ -53,7 +53,7 @@ export function NodeTooltip() {
 
   return (
     <div
-      className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-[var(--color-border-strong)] -elevated/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
+      className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-border-strong -elevated/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
       style={{ left: tip.x + 14, top: tip.y + 14 }}
     >
       <div className="flex items-center gap-1.5">
@@ -67,7 +67,7 @@ export function NodeTooltip() {
       </div>
       <div className="mt-1 truncate font-medium text-fg">{tip.label}</div>
       {tip.meta && (
-        <div className="mt-0.5 text-[10px] text-[var(--color-fg-muted)]">{tip.meta}</div>
+        <div className="mt-0.5 text-[10px] text-fg-muted">{tip.meta}</div>
       )}
     </div>
   );

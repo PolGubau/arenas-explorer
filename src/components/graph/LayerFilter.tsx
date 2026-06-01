@@ -5,12 +5,14 @@ import {
   ALL_DIMENSIONS,
   DIMENSION_COLORS,
   DIMENSION_LABELS,
+  HIDEABLE_RELATIONS,
+  RELATION_LABELS,
 } from "@/lib/constants";
 import { Eye, EyeOff } from "@/lib/icons";
-import type { Dimension } from "@/types/graph";
+import type { Dimension, Relation } from "@/types/graph";
 
 export function LayerFilter() {
-  const { activeLayers, toggleLayer, showSameYear, toggleSameYear } =
+  const { activeLayers, toggleLayer, hiddenRelations, toggleRelation } =
     useExplorerState();
 
   return (
@@ -24,20 +26,41 @@ export function LayerFilter() {
         />
       ))}
       <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-      <button
-        type="button"
-        onClick={toggleSameYear}
-        aria-pressed={showSameYear}
-        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${showSameYear
-          ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-fg"
-          : "border-border bg-transparent text-[var(--color-fg-muted)] hover:text-fg"
-          }`}
-        title="Mostrar aristas «mismo año» (1596 aristas — ruido visual)"
-      >
-        {showSameYear ? <Eye size={12} /> : <EyeOff size={12} />}
-        <span>Mismo año</span>
-      </button>
+      {HIDEABLE_RELATIONS.map((rel) => (
+        <RelationChip
+          key={rel}
+          relation={rel}
+          visible={!hiddenRelations.has(rel)}
+          onClick={() => toggleRelation(rel)}
+        />
+      ))}
     </div>
+  );
+}
+
+function RelationChip({
+  relation,
+  visible,
+  onClick,
+}: {
+  relation: Relation;
+  visible: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={visible}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${visible
+        ? "border-border-strong bg-[var(--color-bg-overlay)] text-fg"
+        : "border-border bg-transparent text-fg-muted hover:text-fg"
+        }`}
+      title={`${visible ? "Ocultar" : "Mostrar"} aristas «${RELATION_LABELS[relation]}»`}
+    >
+      {visible ? <Eye size={12} /> : <EyeOff size={12} />}
+      <span>{RELATION_LABELS[relation]}</span>
+    </button>
   );
 }
 
@@ -57,8 +80,8 @@ function LayerChip({
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${active
-        ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-fg"
-        : "border-border bg-transparent text-fg-subtle hover:text-[var(--color-fg-muted)]"
+        ? "border-border-strong bg-[var(--color-bg-overlay)] text-fg"
+        : "border-border bg-transparent text-fg-subtle hover:text-fg-muted"
         }`}
     >
       <span

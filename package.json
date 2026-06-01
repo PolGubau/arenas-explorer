@@ -8,10 +8,12 @@
 		"prebuild": "tsx scripts/parse-gexf.ts",
 		"build": "next build",
 		"start": "next start",
-		"optimize:images": "tsx scripts/optimize-images.ts"
+		"optimize:images": "tsx scripts/optimize-images.ts",
+		"pipeline:images": "npm run optimize:images && npx tsx scripts/parse-gexf.ts"
 	},
 	"dependencies": {
 		"@react-sigma/core": "^5.0.6",
+		"@react-sigma/minimap": "^5.0.6",
 		"@sigma/node-image": "^3.0.0",
 		"framer-motion": "^12.23.12",
 		"graphology": "^0.26.0",

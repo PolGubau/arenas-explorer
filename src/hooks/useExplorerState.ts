@@ -1,25 +1,25 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { ALL_DIMENSIONS } from "@/lib/constants";
 import {
+	type ExplorerUrlState,
 	applyExplorerPatch,
 	parseExplorerUrl,
-	type ExplorerUrlState,
 } from "@/lib/explorer-url";
-import { ALL_DIMENSIONS } from "@/lib/constants";
-import type { Dimension } from "@/types/graph";
+import type { Dimension, Relation } from "@/types/graph";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
 interface ExplorerActions {
 	setSelected: (id: string | null) => void;
 	toggleLayer: (d: Dimension) => void;
 	setLayers: (layers: ReadonlySet<Dimension>) => void;
-	toggleSameYear: () => void;
+	toggleRelation: (rel: Relation) => void;
 }
 
 /**
  * URL is the single source of truth for selection, layer filters and
- * mismo-año toggle. Selection updates use `router.replace` with
+ * hidden-relations set. Selection updates use `router.replace` with
  * `scroll: false` so back/forward still works while staying client-side.
  */
 export function useExplorerState(): ExplorerUrlState & ExplorerActions {
@@ -63,9 +63,14 @@ export function useExplorerState(): ExplorerUrlState & ExplorerActions {
 		[push],
 	);
 
-	const toggleSameYear = useCallback(
-		() => push({ showSameYear: !state.showSameYear }),
-		[push, state.showSameYear],
+	const toggleRelation = useCallback(
+		(rel: Relation) => {
+			const next = new Set(state.hiddenRelations);
+			if (next.has(rel)) next.delete(rel);
+			else next.add(rel);
+			push({ hiddenRelations: next });
+		},
+		[push, state.hiddenRelations],
 	);
 
 	return {
@@ -73,6 +78,6 @@ export function useExplorerState(): ExplorerUrlState & ExplorerActions {
 		setSelected,
 		toggleLayer,
 		setLayers,
-		toggleSameYear,
+		toggleRelation,
 	};
 }

@@ -1,24 +1,30 @@
-import { ALL_DIMENSIONS } from "@/lib/constants";
-import type { Dimension } from "@/types/graph";
+import { ALL_DIMENSIONS, DEFAULT_HIDDEN_RELATIONS } from "@/lib/constants";
+import type { Dimension, Relation } from "@/types/graph";
 
 /**
  * Single source of truth for the explorer URL schema.
  * - `n`  node id (selected)
  * - `l`  comma-separated active layers (absent ⇒ all)
- * - `y`  "1" if mismo-año edges are visible
+ * - `h`  comma-separated hidden relations (absent ⇒ default; empty ⇒ none hidden)
  */
 export const URL_KEYS = {
 	node: "n",
 	layers: "l",
-	sameYear: "y",
+	hidden: "h",
 } as const;
 
 const DIMENSION_SET: ReadonlySet<Dimension> = new Set(ALL_DIMENSIONS);
+const RELATION_SET: ReadonlySet<Relation> = new Set<Relation>([
+	"lleva_puesto",
+	"mismo_año",
+	"pertenece_a_año",
+	"contiene_palabra",
+]);
 
 export interface ExplorerUrlState {
 	nodeId: string | null;
 	activeLayers: ReadonlySet<Dimension>;
-	showSameYear: boolean;
+	hiddenRelations: ReadonlySet<Relation>;
 }
 
 const ALL_LAYERS_SET: ReadonlySet<Dimension> = new Set(ALL_DIMENSIONS);
@@ -26,19 +32,31 @@ const ALL_LAYERS_SET: ReadonlySet<Dimension> = new Set(ALL_DIMENSIONS);
 export function parseExplorerUrl(
 	params: URLSearchParams | ReadonlyURLSearchParamsLike,
 ): ExplorerUrlState {
-	const raw = params.get(URL_KEYS.layers);
+	const rawLayers = params.get(URL_KEYS.layers);
 	let activeLayers: ReadonlySet<Dimension> = ALL_LAYERS_SET;
-	if (raw != null) {
-		const list = raw
+	if (rawLayers != null) {
+		const list = rawLayers
 			.split(",")
 			.map((s) => s.trim())
 			.filter((s): s is Dimension => DIMENSION_SET.has(s as Dimension));
 		activeLayers = new Set(list);
 	}
+
+	const rawHidden = params.get(URL_KEYS.hidden);
+	let hiddenRelations: ReadonlySet<Relation> = DEFAULT_HIDDEN_RELATIONS;
+	if (rawHidden != null) {
+		// Empty string ⇒ user explicitly hides nothing.
+		const list = rawHidden
+			.split(",")
+			.map((s) => s.trim())
+			.filter((s): s is Relation => RELATION_SET.has(s as Relation));
+		hiddenRelations = new Set(list);
+	}
+
 	return {
 		nodeId: params.get(URL_KEYS.node),
 		activeLayers,
-		showSameYear: params.get(URL_KEYS.sameYear) === "1",
+		hiddenRelations,
 	};
 }
 
@@ -48,7 +66,7 @@ export function applyExplorerPatch(
 	patch: Partial<{
 		nodeId: string | null;
 		activeLayers: ReadonlySet<Dimension>;
-		showSameYear: boolean;
+		hiddenRelations: ReadonlySet<Relation>;
 	}>,
 ): URLSearchParams {
 	if ("nodeId" in patch) {
@@ -69,9 +87,17 @@ export function applyExplorerPatch(
 			);
 		}
 	}
-	if ("showSameYear" in patch) {
-		if (patch.showSameYear) params.set(URL_KEYS.sameYear, "1");
-		else params.delete(URL_KEYS.sameYear);
+	if ("hiddenRelations" in patch && patch.hiddenRelations) {
+		const hidden = patch.hiddenRelations;
+		const isDefault =
+			hidden.size === DEFAULT_HIDDEN_RELATIONS.size &&
+			[...DEFAULT_HIDDEN_RELATIONS].every((r) => hidden.has(r));
+		if (isDefault) {
+			params.delete(URL_KEYS.hidden);
+		} else {
+			// Empty value is meaningful: "explicitly hide nothing".
+			params.set(URL_KEYS.hidden, [...hidden].join(","));
+		}
 	}
 	return params;
 }

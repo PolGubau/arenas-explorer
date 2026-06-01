@@ -16,7 +16,7 @@ export function ConnectionSection({
   return (
     <section className="border-t border-border px-5 py-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-fg-muted)]">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg-muted">
           <span className="text-fg-subtle">{icon}</span>
           {title}
         </h3>

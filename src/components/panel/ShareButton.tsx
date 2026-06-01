@@ -26,10 +26,10 @@ export function ShareButton() {
 			onClick={copy}
 			aria-label="Copiar enlace"
 			title="Copiar enlace al portapapeles"
-			className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:-elevated hover:text-fg"
+			className="flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:-elevated hover:text-fg"
 		>
 			{copied ? (
-				<Check size={14} className="text-[var(--color-dim-transcripcion)]" />
+				<Check size={14} className="text-dim-transcripcion" />
 			) : (
 				<Link2 size={14} />
 			)}

@@ -1,7 +1,7 @@
 "use client";
 
-import type Graph from "graphology";
 import { AnimatePresence, motion } from "framer-motion";
+import type Graph from "graphology";
 import dynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -126,7 +126,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: 12 }}
 						transition={{ duration: 0.18 }}
-						className="pb-safe fixed bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] -elevated/95 px-3.5 py-2 text-[11px] font-medium text-fg shadow-lg backdrop-blur md:hidden"
+						className="pb-safe fixed bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-border-strong -elevated/95 px-3.5 py-2 text-[11px] font-medium text-fg shadow-lg backdrop-blur md:hidden"
 					>
 						<PanelRightOpen size={13} />
 						Ver detalles
@@ -179,7 +179,7 @@ function MobileSheet({
 								type="button"
 								onClick={onClose}
 								aria-label="Cerrar panel"
-								className="h-1.5 w-12 rounded-full bg-[var(--color-border-strong)] transition-colors hover:-fg-subtle"
+								className="h-1.5 w-12 rounded-full bg-border-strong transition-colors hover:-fg-subtle"
 							/>
 						</div>
 						<div className="min-h-0 flex-1 overflow-hidden">{children}</div>
@@ -219,7 +219,7 @@ function Header({
 						onClick={onOpenMissing}
 						title={`${missingCount} foto${missingCount === 1 ? "" : "s"} sin imagen`}
 						aria-label="Ver fotos sin imagen"
-						className="group flex items-center gap-1.5 rounded-md border border-border -elevated px-2 py-1.5 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-fg"
+						className="group flex items-center gap-1.5 rounded-md border border-border -elevated px-2 py-1.5 text-[11px] text-fg-muted transition-colors hover:border-strong hover:text-fg"
 					>
 						<ImageOff size={12} />
 						<span className="font-mono tabular-nums">{missingCount}</span>
@@ -229,7 +229,7 @@ function Header({
 				<button
 					type="button"
 					onClick={onOpenPalette}
-					className="group flex items-center gap-2 rounded-md border border-border -elevated px-2 py-1.5 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-borde)] hover:text-fg sm:px-2.5"
+					className="group flex items-center gap-2 rounded-md border border-border -elevated px-2 py-1.5 text-[11px] text-fg-muted transition-colors hover:border-[var(--color-borde)] hover:text-fg sm:px-2.5"
 					aria-label="Buscar nodo"
 				>
 					<Search size={12} />
@@ -267,7 +267,7 @@ function Footer() {
 				href="https://polgubau.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="ml-auto font-medium text-[var(--color-fg-muted)] transition-colors hover:text-fg"
+				className="ml-auto font-medium text-fg-muted transition-colors hover:text-fg"
 			>
 				polgubau.com
 			</a>
@@ -287,7 +287,7 @@ function LegendHint() {
 function GlobalLoading() {
 	return (
 		<div className="flex h-dvh w-screen items-center justify-center bg-[var(--color-bg)]">
-			<div className="flex items-center gap-3 text-[var(--color-fg-muted)]">
+			<div className="flex items-center gap-3 text-fg-muted">
 				<Loader2 size={18} className="animate-spin" />
 				<span className="text-sm">Cargando grafo y texturas…</span>
 			</div>
@@ -311,7 +311,7 @@ function ErrorState({ message }: { message: string }) {
 				<h2 className="text-sm font-semibold text-fg">
 					No se pudo cargar el grafo
 				</h2>
-				<p className="text-xs text-[var(--color-fg-muted)]">{message}</p>
+				<p className="text-xs text-fg-muted">{message}</p>
 			</div>
 		</div>
 	);

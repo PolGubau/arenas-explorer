@@ -127,7 +127,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: -8, opacity: 0 }}
 						transition={{ duration: 0.14 }}
-						className="w-full max-w-xl overflow-hidden rounded-xl border border-[var(--color-border-strong)] -elevated shadow-2xl"
+						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong -elevated shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
@@ -165,7 +165,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 										onClick={() => commit(h)}
 										className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${i === active
 											? "bg-[var(--color-bg-overlay)] text-fg"
-											: "text-[var(--color-fg-muted)]"
+											: "text-fg-muted"
 											}`}
 									>
 										<span

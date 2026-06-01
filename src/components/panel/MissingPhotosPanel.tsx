@@ -89,7 +89,7 @@ export function MissingPhotosPanel({ open, onClose }: MissingPhotosPanelProps) {
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: -8, opacity: 0 }}
 						transition={{ duration: 0.14 }}
-						className="w-full max-w-xl overflow-hidden rounded-xl border border-[var(--color-border-strong)] -elevated shadow-2xl"
+						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong -elevated shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
@@ -108,7 +108,7 @@ export function MissingPhotosPanel({ open, onClose }: MissingPhotosPanelProps) {
 								onClick={copy}
 								disabled={filtered.length === 0}
 								title="Copiar IDs al portapapeles"
-								className="flex h-7 items-center gap-1.5 rounded-md border border-border px-2 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
+								className="flex h-7 items-center gap-1.5 rounded-md border border-border px-2 text-[11px] text-fg-muted transition-colors hover:border-border-strong hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
 							>
 								{copied ? <Check size={12} /> : <Copy size={12} />}
 								{copied ? "Copiado" : "Copiar"}
@@ -117,7 +117,7 @@ export function MissingPhotosPanel({ open, onClose }: MissingPhotosPanelProps) {
 								type="button"
 								onClick={onClose}
 								aria-label="Cerrar"
-								className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:bg-[var(--color-bg-overlay)] hover:text-fg"
+								className="flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-[var(--color-bg-overlay)] hover:text-fg"
 							>
 								<X size={14} />
 							</button>

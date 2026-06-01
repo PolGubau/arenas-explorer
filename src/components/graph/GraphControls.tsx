@@ -1,7 +1,7 @@
 "use client";
 
-import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
 import { Maximize2, Minimize2, RotateCcw, ZoomIn, ZoomOut } from "@/lib/icons";
+import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
 
 interface CtrlBtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
@@ -14,7 +14,7 @@ function CtrlBtn({ label, children, ...rest }: CtrlBtnProps) {
       type="button"
       aria-label={label}
       title={label}
-      className="flex h-8 w-8 items-center justify-center rounded-md border border-border -elevated/80 text-[var(--color-fg-muted)] backdrop-blur transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-fg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:h-9 sm:w-9"
+      className="flex h-8 w-8 items-center justify-center rounded-md border border-border -elevated/80 text-fg-muted backdrop-blur transition-colors hover:border-border-strong hover:bg-[var(--color-bg-overlay)] hover:text-fg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:h-9 sm:w-9"
       {...rest}
     >
       {children}

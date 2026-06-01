@@ -4,10 +4,12 @@ import {
   SigmaContainer,
   useLoadGraph,
 } from "@react-sigma/core";
+import { MiniMap } from "@react-sigma/minimap";
 import { NodeImageProgram } from "@sigma/node-image";
 import type Graph from "graphology";
 import { useEffect } from "react";
 import type { Settings } from "sigma/settings";
+import type { NodeDisplayData, PartialButFor } from "sigma/types";
 import "@react-sigma/core/lib/style.css";
 
 import { CameraSync } from "./CameraSync";
@@ -21,6 +23,74 @@ interface GraphCanvasProps {
   graph: Graph;
 }
 
+/**
+ * Custom hover renderer that uses a dark background to match the app's dark
+ * theme. Sigma's built-in version hardcodes #FFF, making white label text
+ * invisible against it.
+ */
+function drawDarkNodeHover(
+  context: CanvasRenderingContext2D,
+  data: PartialButFor<NodeDisplayData, "x" | "y" | "size" | "label" | "color">,
+  settings: Settings,
+): void {
+  const { labelSize: size, labelFont: font, labelWeight: weight } = settings;
+  context.font = `${weight} ${size}px ${font}`;
+
+  context.fillStyle = "#1a1a1f";
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 0;
+  context.shadowBlur = 8;
+  context.shadowColor = "rgba(0,0,0,0.9)";
+
+  const PADDING = 2;
+
+  if (typeof data.label === "string") {
+    const textWidth = context.measureText(data.label).width;
+    const boxWidth = Math.round(textWidth + 5);
+    const boxHeight = Math.round(size + 2 * PADDING);
+    const radius = Math.max(data.size, size / 2) + PADDING;
+    const angleRadian = Math.asin(boxHeight / 2 / radius);
+    const xDeltaCoord = Math.sqrt(Math.abs(radius ** 2 - (boxHeight / 2) ** 2));
+
+    context.beginPath();
+    context.moveTo(data.x + xDeltaCoord, data.y + boxHeight / 2);
+    context.lineTo(data.x + radius + boxWidth, data.y + boxHeight / 2);
+    context.lineTo(data.x + radius + boxWidth, data.y - boxHeight / 2);
+    context.lineTo(data.x + xDeltaCoord, data.y - boxHeight / 2);
+    context.arc(data.x, data.y, radius, angleRadian, -angleRadian);
+    context.closePath();
+    context.fill();
+  } else {
+    context.beginPath();
+    context.arc(data.x, data.y, data.size + PADDING, 0, Math.PI * 2);
+    context.closePath();
+    context.fill();
+  }
+
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 0;
+  context.shadowBlur = 0;
+
+  if (typeof data.label === "string") {
+    const lc = settings.labelColor as
+      | { attribute: string; color?: string }
+      | { color: string };
+    let color: string;
+    if ("attribute" in lc) {
+      color =
+        ((data as Record<string, unknown>)[lc.attribute as string] as
+          | string
+          | undefined) ??
+        lc.color ??
+        "#e4e4e7";
+    } else {
+      color = lc.color;
+    }
+    context.fillStyle = color;
+    context.fillText(data.label, data.x + data.size + 3, data.y + size / 3);
+  }
+}
+
 const SIGMA_SETTINGS: Partial<Settings> = {
   allowInvalidContainer: true,
   defaultNodeType: "circle",
@@ -28,18 +98,19 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   nodeProgramClasses: {
     image: NodeImageProgram,
   },
-  labelColor: { color: "#a1a1aa" },
-  labelSize: 11,
-  labelWeight: "500",
+  defaultDrawNodeHover: drawDarkNodeHover,
+  labelColor: { color: "#e4e4e7" },
+  labelSize: 12,
+  labelWeight: "600",
   labelFont:
     'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   // Labels gate by *rendered* node size: when the user zooms out, low-degree
   // nodes drop below the threshold and only hubs keep their labels. Since
   // `size` is derived from `degree` (see nodeSize), this single threshold
   // gives us importance- and zoom-aware label filtering for free.
-  labelDensity: 0.4,
-  labelGridCellSize: 120,
-  labelRenderedSizeThreshold: 14,
+  labelDensity: 0.5,
+  labelGridCellSize: 100,
+  labelRenderedSizeThreshold: 18,
   edgeLabelSize: 10,
   enableEdgeEvents: false,
   renderEdgeLabels: false,
@@ -71,6 +142,9 @@ export function GraphCanvas({ graph }: GraphCanvasProps) {
       <InitialSelection />
       <GraphControls />
       <NodeTooltip />
+      <div className="absolute bottom-16 left-3 z-20 hidden overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-md sm:bottom-20 sm:left-4 sm:block">
+        <MiniMap width="140px" height="140px" />
+      </div>
     </SigmaContainer>
   );
 }

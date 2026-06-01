@@ -30,6 +30,63 @@ import type {
 	Relation,
 } from "../src/types/graph";
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+// Allow-lists used to validate GEXF attribute values. A mis-typed dimension or
+// relation is a data bug — better to fail the build than silently mis-render.
+const DIMENSIONS: ReadonlySet<Dimension> = new Set([
+	"imagen",
+	"transcripcion",
+	"año",
+	"vestimenta",
+]);
+const RELATIONS: ReadonlySet<Relation> = new Set([
+	"lleva_puesto",
+	"mismo_año",
+	"pertenece_a_año",
+	"contiene_palabra",
+]);
+
+// Random seed (mulberry32) — fixed so node positions are reproducible across
+// builds. ForceAtlas2 itself adds non-determinism inside Barnes-Hut, so the
+// final layout is *approximately* deterministic, not bit-for-bit.
+const RANDOM_SEED = 42;
+const RANDOM_LAYOUT_SCALE = 1000;
+
+// ForceAtlas2 — Gephi-like settings to surface clear community blobs:
+//   - linLogMode + outboundAttractionDistribution: spread communities apart
+//     and stop hubs from absorbing their neighbours.
+//   - gravity 1, scalingRatio 2: standard Gephi defaults with linLog.
+//   - Two passes: a long shape-finding pass first, then a shorter refine
+//     pass with adjustSizes so radii match what Sigma will actually render.
+const FA2_SHAPE_ITERATIONS = 1500;
+const FA2_REFINE_ITERATIONS = 500;
+const FA2_BASE_SETTINGS = {
+	linLogMode: true,
+	outboundAttractionDistribution: true,
+	gravity: 1,
+	scalingRatio: 2,
+	strongGravityMode: false,
+	barnesHutOptimize: true,
+	barnesHutTheta: 0.8,
+	edgeWeightInfluence: 1,
+	slowDown: 1,
+} as const;
+
+// Anti-collision pass: ratio is derived from the layout's actual coordinate
+// span so node sizes map cleanly into graph units regardless of FA2 scale.
+const NOVERLAP_ITERATIONS = 200;
+const NOVERLAP_RATIO_DIVISOR = 30;
+const NOVERLAP_MARGIN_FACTOR = 2;
+const NOVERLAP_EXPANSION = 1.2;
+const NOVERLAP_GRID_SIZE = 50;
+const NOVERLAP_SPEED = 4;
+
+// Thumb filename probing: GEXF node ids are the original `.jpg` filenames;
+// thumbs are `.webp`. Some collections add variant suffixes (e.g. `_ma` on
+// Gudiol-restored scans) — we probe a small ordered list of candidates.
+const THUMB_EXTENSION = "webp";
+const THUMB_SUFFIX_VARIANTS = ["", "_ma"] as const;
+
 // Mirrors `nodeSize` in src/lib/constants.ts so the layout (FA2 with
 // adjustSizes + noverlap) reasons about the same radii Sigma renders.
 // Per-dimension curves create a content hierarchy: photos > years > clothing > words.
@@ -47,8 +104,6 @@ function nodeSize(dimension: Dimension, degree: number): number {
 	}
 }
 
-// Deterministic PRNG (mulberry32) so the random seed — and therefore the
-// final node positions — are reproducible across builds.
 function seededRandom(seed: number): () => number {
 	let s = seed >>> 0;
 	return () => {
@@ -58,6 +113,26 @@ function seededRandom(seed: number): () => number {
 		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
 		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 	};
+}
+
+function assertDimension(value: unknown, nodeId: string): Dimension {
+	if (typeof value === "string" && DIMENSIONS.has(value as Dimension)) {
+		return value as Dimension;
+	}
+	throw new Error(
+		`Node "${nodeId}" has invalid dimension: ${JSON.stringify(value)}. ` +
+			`Expected one of: ${[...DIMENSIONS].join(", ")}`,
+	);
+}
+
+function assertRelation(value: unknown, edgeRef: string): Relation {
+	if (typeof value === "string" && RELATIONS.has(value as Relation)) {
+		return value as Relation;
+	}
+	throw new Error(
+		`Edge ${edgeRef} has invalid relation: ${JSON.stringify(value)}. ` +
+			`Expected one of: ${[...RELATIONS].join(", ")}`,
+	);
 }
 
 const ROOT = process.cwd();
@@ -152,10 +227,10 @@ function main() {
 	// 4. Anti-collision pass — eliminates residual node overlap without
 	//    destroying the FA2 cluster structure. Ratio is derived from the
 	//    layout's actual coordinate span so node sizes map into graph units.
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
+	let minX = Number.POSITIVE_INFINITY;
+	let maxX = Number.NEGATIVE_INFINITY;
+	let minY = Number.POSITIVE_INFINITY;
+	let maxY = Number.NEGATIVE_INFINITY;
 	graph.forEachNode((_id, attrs) => {
 		const x = Number(attrs.x);
 		const y = Number(attrs.y);
@@ -243,10 +318,7 @@ function main() {
 			if ((attrs.dimension as Dimension) !== "imagen") return;
 			const base = id.replace(/\.[^.]+$/, "");
 			// Probe order: exact match first, then known suffix variants.
-			const candidates = [
-				`${base}.webp`,
-				`${base}_ma.webp`,
-			];
+			const candidates = [`${base}.webp`, `${base}_ma.webp`];
 			const thumbName = candidates.find((c) => local.has(c));
 			if (!thumbName) return;
 			const existing = imagesIndex[id];
