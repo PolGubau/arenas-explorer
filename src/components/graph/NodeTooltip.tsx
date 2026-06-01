@@ -53,7 +53,7 @@ export function NodeTooltip() {
 
   return (
     <div
-      className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
+      className="pointer-events-none absolute z-20 max-w-[260px] rounded-lg border border-[var(--color-border-strong)] -elevated/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
       style={{ left: tip.x + 14, top: tip.y + 14 }}
     >
       <div className="flex items-center gap-1.5">
@@ -61,11 +61,11 @@ export function NodeTooltip() {
           className="h-2 w-2 rounded-full"
           style={{ backgroundColor: DIMENSION_COLORS[tip.dimension] }}
         />
-        <span className="text-[10px] uppercase tracking-wide text-[var(--color-fg-subtle)]">
+        <span className="text-[10px] uppercase tracking-wide text-fg-subtle">
           {DIMENSION_LABELS[tip.dimension]}
         </span>
       </div>
-      <div className="mt-1 truncate font-medium text-[var(--color-fg)]">{tip.label}</div>
+      <div className="mt-1 truncate font-medium text-fg">{tip.label}</div>
       {tip.meta && (
         <div className="mt-0.5 text-[10px] text-[var(--color-fg-muted)]">{tip.meta}</div>
       )}

@@ -26,7 +26,7 @@ export function ShareButton() {
 			onClick={copy}
 			aria-label="Copiar enlace"
 			title="Copiar enlace al portapapeles"
-			className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-fg)]"
+			className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:-elevated hover:text-fg"
 		>
 			{copied ? (
 				<Check size={14} className="text-[var(--color-dim-transcripcion)]" />

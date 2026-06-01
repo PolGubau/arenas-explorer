@@ -3,6 +3,8 @@
  */
 export {
   Image as ImageIcon,
+  ImageOff,
+  Copy,
   Calendar,
   Shirt,
   Type as TypeIcon,

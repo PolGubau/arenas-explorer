@@ -20,8 +20,8 @@ export function RelatedThumb({ id, size }: RelatedThumbProps) {
   // When `size` is omitted the thumb fills its grid cell as a square.
   const style = size ? { width: size, height: size } : undefined;
   const className = size
-    ? "group relative overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40"
-    : "group relative aspect-square w-full overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40";
+    ? "group relative overflow-hidden rounded-md border border-border -elevated transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40"
+    : "group relative aspect-square w-full overflow-hidden rounded-md border border-border -elevated transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40";
 
   return (
     <button
@@ -40,7 +40,7 @@ export function RelatedThumb({ id, size }: RelatedThumbProps) {
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
         />
       ) : (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[var(--color-fg-subtle)]">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-fg-subtle">
           <ImageIcon size={16} />
           {year && (
             <span className="text-[9px] font-medium tabular-nums">{year}</span>

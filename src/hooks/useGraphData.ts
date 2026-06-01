@@ -1,6 +1,6 @@
 "use client";
 
-import { DIMENSION_COLORS, nodeSizeFromDegree } from "@/lib/constants";
+import { DIMENSION_COLORS, nodeSize } from "@/lib/constants";
 import type { GraphData, ImagesIndex } from "@/types/graph";
 import Graph from "graphology";
 import { useEffect, useState } from "react";
@@ -55,7 +55,7 @@ export function useGraphData(): UseGraphDataResult {
 						confianza: n.confianza,
 						n_fotos: n.n_fotos,
 						color: DIMENSION_COLORS[n.dimension],
-						size: nodeSizeFromDegree(n.degree),
+						size: nodeSize(n.dimension, n.degree),
 						type: hasImage ? "image" : "circle",
 						...(hasImage ? { image: index[n.id].url } : {}),
 					});

@@ -127,11 +127,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: -8, opacity: 0 }}
 						transition={{ duration: 0.14 }}
-						className="w-full max-w-xl overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)] shadow-2xl"
+						className="w-full max-w-xl overflow-hidden rounded-xl border border-[var(--color-border-strong)] -elevated shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div className="flex items-center gap-2.5 border-b border-[var(--color-border)] px-4 py-3">
-							<Search size={15} className="text-[var(--color-fg-subtle)]" />
+						<div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+							<Search size={15} className="text-fg-subtle" />
 							<input
 								ref={inputRef}
 								type="text"
@@ -139,11 +139,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 								onChange={(e) => setQuery(e.target.value)}
 								onKeyDown={onKey}
 								placeholder="Buscar nodo: foto, año, prenda o palabra…"
-								className="flex-1 bg-transparent text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none"
+								className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
 								spellCheck={false}
 								autoComplete="off"
 							/>
-							<kbd className="hidden rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] text-[var(--color-fg-subtle)] sm:inline">
+							<kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-fg-subtle sm:inline">
 								Esc
 							</kbd>
 						</div>
@@ -152,7 +152,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 							className="scroll-thin max-h-[60vh] overflow-y-auto py-1 sm:max-h-[50vh]"
 						>
 							{results.length === 0 ? (
-								<p className="px-4 py-6 text-center text-xs text-[var(--color-fg-subtle)]">
+								<p className="px-4 py-6 text-center text-xs text-fg-subtle">
 									Sin resultados para «{query}»
 								</p>
 							) : (
@@ -164,7 +164,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 										onMouseEnter={() => setActive(i)}
 										onClick={() => commit(h)}
 										className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${i === active
-											? "bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
+											? "bg-[var(--color-bg-overlay)] text-fg"
 											: "text-[var(--color-fg-muted)]"
 											}`}
 									>
@@ -174,13 +174,13 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 											style={{ backgroundColor: DIMENSION_COLORS[h.dimension] }}
 										/>
 										<span className="min-w-0 flex-1 truncate">{h.label}</span>
-										<span className="hidden text-[10px] uppercase tracking-wide text-[var(--color-fg-subtle)] sm:inline">
+										<span className="hidden text-[10px] uppercase tracking-wide text-fg-subtle sm:inline">
 											{DIMENSION_LABELS[h.dimension]}
 										</span>
 										{i === active && (
 											<CornerDownLeft
 												size={12}
-												className="text-[var(--color-fg-subtle)]"
+												className="text-fg-subtle"
 											/>
 										)}
 									</button>

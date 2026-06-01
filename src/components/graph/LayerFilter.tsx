@@ -23,14 +23,14 @@ export function LayerFilter() {
           onClick={() => toggleLayer(d)}
         />
       ))}
-      <span className="mx-1 hidden h-5 w-px bg-[var(--color-border)] sm:block" />
+      <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
       <button
         type="button"
         onClick={toggleSameYear}
         aria-pressed={showSameYear}
         className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${showSameYear
-          ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
-          : "border-[var(--color-border)] bg-transparent text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+          ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-fg"
+          : "border-border bg-transparent text-[var(--color-fg-muted)] hover:text-fg"
           }`}
         title="Mostrar aristas «mismo año» (1596 aristas — ruido visual)"
       >
@@ -57,8 +57,8 @@ function LayerChip({
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${active
-        ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
-        : "border-[var(--color-border)] bg-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-muted)]"
+        ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-fg"
+        : "border-border bg-transparent text-fg-subtle hover:text-[var(--color-fg-muted)]"
         }`}
     >
       <span

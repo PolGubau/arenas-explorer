@@ -29,7 +29,7 @@ export function DetailPanel({ onClose }: DetailPanelProps) {
 		selectedNodeId != null && graph.hasNode(selectedNodeId);
 
 	return (
-		<aside className="scroll-thin flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] md:border-l md:border-[var(--color-border)]">
+		<aside className="scroll-thin flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] md:border-l md:border-border">
 			<AnimatePresence mode="wait">
 				{hasNode ? (
 					<motion.div
@@ -57,7 +57,7 @@ function DetailHeader({ onClose }: { onClose?: () => void }) {
 
 	const dimension = graph.getNodeAttribute(selectedNodeId, "dimension") as Dimension;
 	return (
-		<div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-3">
+		<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
 			<DimensionBadge dimension={dimension} />
 			<div className="flex items-center gap-1">
 				<ShareButton />
@@ -69,7 +69,7 @@ function DetailHeader({ onClose }: { onClose?: () => void }) {
 					}}
 					aria-label="Cerrar panel"
 					title="Cerrar (Esc)"
-					className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-fg)]"
+					className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:-elevated hover:text-fg"
 				>
 					<X size={14} />
 				</button>
@@ -144,7 +144,7 @@ function WordView({ nodeId }: { nodeId: string }) {
 
 function EmptyState() {
 	return (
-		<div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center text-[var(--color-fg-subtle)]">
+		<div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center text-fg-subtle">
 			<ImageIcon size={28} />
 			<p className="text-sm">
 				Selecciona un nodo del grafo para ver sus conexiones.
@@ -191,7 +191,7 @@ function ImageView({ nodeId }: { nodeId: string }) {
 					))}
 				</div>
 				{neighbours.mismo_año.length > 32 && (
-					<p className="mt-2 text-[10px] text-[var(--color-fg-subtle)]">
+					<p className="mt-2 text-[10px] text-fg-subtle">
 						+{neighbours.mismo_año.length - 32} más
 					</p>
 				)}

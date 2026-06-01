@@ -18,7 +18,7 @@ import Graph from "graphology";
 import gexf from "graphology-gexf";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import noverlap from "graphology-layout-noverlap";
-import circular from "graphology-layout/circular";
+import random from "graphology-layout/random";
 
 import type {
 	Dimension,
@@ -30,11 +30,36 @@ import type {
 	Relation,
 } from "../src/types/graph";
 
-// Mirrors `nodeSizeFromDegree` in src/lib/constants.ts so the layout
-// (FA2 with adjustSizes + noverlap) reasons about the same radii Sigma renders.
-function nodeSize(degree: number): number {
-	return 6 + Math.log1p(degree) * 4;
+// Mirrors `nodeSize` in src/lib/constants.ts so the layout (FA2 with
+// adjustSizes + noverlap) reasons about the same radii Sigma renders.
+// Per-dimension curves create a content hierarchy: photos > years > clothing > words.
+function nodeSize(dimension: Dimension, degree: number): number {
+	const d = Math.max(0, degree);
+	switch (dimension) {
+		case "imagen":
+			return 7 + Math.log1p(d) * 2.5;
+		case "año":
+			return 8 + Math.log1p(d) * 1.6;
+		case "vestimenta":
+			return 4 + Math.log1p(d) * 1.0;
+		case "transcripcion":
+			return 3 + Math.log1p(d) * 0.8;
+	}
 }
+
+// Deterministic PRNG (mulberry32) so the random seed — and therefore the
+// final node positions — are reproducible across builds.
+function seededRandom(seed: number): () => number {
+	let s = seed >>> 0;
+	return () => {
+		s = (s + 0x6d2b79f5) | 0;
+		let t = s;
+		t = Math.imul(t ^ (t >>> 15), t | 1);
+		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
 const ROOT = process.cwd();
 const GEXF_PATH = join(ROOT, "data", "grafo.gexf");
 const CSV_PATH = join(ROOT, "data", "input.csv");
@@ -83,40 +108,45 @@ function main() {
 
 	console.log(`  ${graph.order} nodes · ${graph.size} edges`);
 
-	// 1. Deterministic circular seed → avoids the random-clump start that
-	//    causes FA2 to settle into a dense central blob.
-	console.log("→ Seeding with circular layout…");
-	circular.assign(graph, { scale: Math.max(500, graph.order) });
+	// 1. Random seed (Gephi-style). A circular seed locks nodes into a donut;
+	//    a random seed lets FA2 form natural community blobs.
+	console.log("→ Seeding with random layout…");
+	random.assign(graph, { scale: 1000, rng: seededRandom(42) });
 
 	// 2. Pre-assign sizes so FA2 (adjustSizes) and noverlap respect them.
 	graph.forEachNode((node, attrs) => {
 		const degree = Number(attrs.degree_static ?? graph.degree(node));
-		graph.setNodeAttribute(node, "size", nodeSize(degree));
+		const dimension = (attrs.dimension as Dimension) ?? "imagen";
+		graph.setNodeAttribute(node, "size", nodeSize(dimension, degree));
 	});
 
-	// 3. ForceAtlas2 — tuned for multidimensional graphs with communities:
-	//    - linLogMode: spreads communities into readable clusters
-	//    - outboundAttractionDistribution: hubs don't absorb their neighbours
-	//    - low gravity + high scalingRatio: less central collapse
-	//    - adjustSizes: nodes repel based on their visual radius
-	const inferred = forceAtlas2.inferSettings(graph);
-	const fa2Iterations = graph.order > 1000 ? 2500 : 1500;
-	console.log(`→ Running ForceAtlas2 (${fa2Iterations} iterations)…`);
+	// 3. ForceAtlas2 — Gephi-like settings for clear community blobs:
+	//    - linLogMode + outboundAttractionDistribution: spread communities and
+	//      stop hubs from absorbing their neighbours.
+	//    - gravity 1, scalingRatio 2: standard Gephi defaults with linLog —
+	//      strong enough to form cohesive blobs without central pile-up.
+	//    - Two passes: a long shape-finding pass first, then a shorter refine
+	//      pass with adjustSizes for honest visual radii.
+	const fa2Base = {
+		linLogMode: true,
+		outboundAttractionDistribution: true,
+		gravity: 1,
+		scalingRatio: 2,
+		strongGravityMode: false,
+		barnesHutOptimize: true,
+		barnesHutTheta: 0.8,
+		edgeWeightInfluence: 1,
+		slowDown: 1,
+	} as const;
+	console.log("→ Running ForceAtlas2 (shape pass, 1500 it.)…");
 	forceAtlas2.assign(graph, {
-		iterations: fa2Iterations,
-		settings: {
-			...inferred,
-			linLogMode: true,
-			outboundAttractionDistribution: true,
-			adjustSizes: true,
-			gravity: 0.05,
-			scalingRatio: 10,
-			strongGravityMode: false,
-			barnesHutOptimize: true,
-			barnesHutTheta: 0.8,
-			edgeWeightInfluence: 1,
-			slowDown: 1,
-		},
+		iterations: 1500,
+		settings: { ...fa2Base, adjustSizes: false },
+	});
+	console.log("→ Running ForceAtlas2 (refine pass, 500 it. + adjustSizes)…");
+	forceAtlas2.assign(graph, {
+		iterations: 500,
+		settings: { ...fa2Base, adjustSizes: true },
 	});
 
 	// 4. Anti-collision pass — eliminates residual node overlap without
@@ -205,13 +235,20 @@ function main() {
 	if (existsSync(IMAGES_DIR)) {
 		// The thumb dir stores `.webp` files; node ids are the original `.jpg`
 		// filenames, so we strip the extension to match.
+		// Some collections use variant suffixes (e.g. `_ma` for Gudiol scans);
+		// we probe a list of candidates so the mapping is suffix-agnostic.
 		const local = new Set(readdirSync(IMAGES_DIR));
 		let matched = 0;
 		graph.forEachNode((id, attrs) => {
 			if ((attrs.dimension as Dimension) !== "imagen") return;
 			const base = id.replace(/\.[^.]+$/, "");
-			const thumbName = `${base}.webp`;
-			if (!local.has(thumbName)) return;
+			// Probe order: exact match first, then known suffix variants.
+			const candidates = [
+				`${base}.webp`,
+				`${base}_ma.webp`,
+			];
+			const thumbName = candidates.find((c) => local.has(c));
+			if (!thumbName) return;
 			const existing = imagesIndex[id];
 			const url = `${IMAGES_PUBLIC_PREFIX}/${thumbName}`;
 			const next: ImageMeta = existing

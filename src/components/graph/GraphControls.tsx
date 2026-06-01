@@ -14,7 +14,7 @@ function CtrlBtn({ label, children, ...rest }: CtrlBtnProps) {
       type="button"
       aria-label={label}
       title={label}
-      className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/80 text-[var(--color-fg-muted)] backdrop-blur transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:h-9 sm:w-9"
+      className="flex h-8 w-8 items-center justify-center rounded-md border border-border -elevated/80 text-[var(--color-fg-muted)] backdrop-blur transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-fg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:h-9 sm:w-9"
       {...rest}
     >
       {children}

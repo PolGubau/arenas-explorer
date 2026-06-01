@@ -17,7 +17,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 
 	return (
 		<div className="px-5 pt-5">
-			<div className="relative aspect-square overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+			<div className="relative aspect-square overflow-hidden rounded-lg border border-border -elevated">
 				{showImage ? (
 					/* eslint-disable-next-line @next/next/no-img-element */
 					<img
@@ -28,7 +28,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 						className="h-full w-full object-cover"
 					/>
 				) : (
-					<div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--color-fg-subtle)]">
+					<div className="flex h-full w-full flex-col items-center justify-center gap-2 text-fg-subtle">
 						<ImageIcon size={32} />
 						<span className="px-4 text-center text-[11px] leading-tight">
 							Imagen no disponible localmente
@@ -40,12 +40,12 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 			<div className="mt-3 flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1">
 					<h2
-						className="truncate text-sm font-semibold text-[var(--color-fg)]"
+						className="truncate text-sm font-semibold text-fg"
 						title={meta?.caption || id}
 					>
 						{meta?.caption || id}
 					</h2>
-					<p className="mt-0.5 truncate font-mono text-[10px] text-[var(--color-fg-subtle)]">
+					<p className="mt-0.5 truncate font-mono text-[10px] text-fg-subtle">
 						{id}
 					</p>
 				</div>
@@ -55,7 +55,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 						target="_blank"
 						rel="noopener noreferrer"
 						title="Ver original"
-						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-fg"
 					>
 						<ExternalLink size={13} />
 					</a>
@@ -82,7 +82,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 function MetaRow({ label, value }: { label: string; value: string }) {
 	return (
 		<>
-			<dt className="text-[var(--color-fg-subtle)]">{label}</dt>
+			<dt className="text-fg-subtle">{label}</dt>
 			<dd className="truncate text-[var(--color-fg-muted)]" title={value}>
 				{value}
 			</dd>

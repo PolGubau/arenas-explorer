@@ -28,7 +28,20 @@ export const ALL_DIMENSIONS: Dimension[] = [
   "transcripcion",
 ];
 
-// Proporcional al grado. Mínimo 6, máximo ~30.
-export function nodeSizeFromDegree(degree: number): number {
-  return 6 + Math.log1p(degree) * 4;
+// Jerarquía visual por dimensión: imagen = contenido primario, año = anclas
+// temporales, vestimenta/transcripción = tags secundarios. Curvas sub-lineales
+// con techos apretados evitan que los hubs (años con cientos de fotos, palabras
+// muy frecuentes) dominen el canvas y compliquen el noverlap del build.
+export function nodeSize(dimension: Dimension, degree: number): number {
+  const d = Math.max(0, degree);
+  switch (dimension) {
+    case "imagen":
+      return 7 + Math.log1p(d) * 2.5;
+    case "año":
+      return 8 + Math.log1p(d) * 1.6;
+    case "vestimenta":
+      return 4 + Math.log1p(d) * 1.0;
+    case "transcripcion":
+      return 3 + Math.log1p(d) * 0.8;
+  }
 }

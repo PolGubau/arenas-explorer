@@ -33,14 +33,18 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   labelWeight: "500",
   labelFont:
     'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  labelDensity: 0.07,
-  labelGridCellSize: 60,
-  labelRenderedSizeThreshold: 8,
+  // Labels gate by *rendered* node size: when the user zooms out, low-degree
+  // nodes drop below the threshold and only hubs keep their labels. Since
+  // `size` is derived from `degree` (see nodeSize), this single threshold
+  // gives us importance- and zoom-aware label filtering for free.
+  labelDensity: 0.4,
+  labelGridCellSize: 120,
+  labelRenderedSizeThreshold: 14,
   edgeLabelSize: 10,
   enableEdgeEvents: false,
   renderEdgeLabels: false,
   hideEdgesOnMove: true,
-  hideLabelsOnMove: false,
+  hideLabelsOnMove: true,
   minCameraRatio: 0.05,
   maxCameraRatio: 8,
   zIndex: true,

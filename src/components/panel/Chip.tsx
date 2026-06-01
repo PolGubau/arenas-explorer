@@ -19,7 +19,7 @@ export function Chip({ id, label, dimension, icon }: ChipProps) {
     <button
       type="button"
       onClick={() => setSelected(id)}
-      className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2.5 py-1 text-xs text-[var(--color-fg-muted)] transition-all hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-fg)]"
+      className="group inline-flex items-center gap-1.5 rounded-full border border-border -elevated px-2.5 py-1 text-xs text-[var(--color-fg-muted)] transition-all hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-fg"
     >
       <span
         aria-hidden
@@ -27,7 +27,7 @@ export function Chip({ id, label, dimension, icon }: ChipProps) {
         style={{ backgroundColor: color }}
       />
       {icon && (
-        <span className="text-[var(--color-fg-subtle)] group-hover:text-[var(--color-fg-muted)]">
+        <span className="text-fg-subtle group-hover:text-[var(--color-fg-muted)]">
           {icon}
         </span>
       )}
