@@ -6,11 +6,13 @@ import type { Dimension, Relation } from "@/types/graph";
  * - `n`  node id (selected)
  * - `l`  comma-separated active layers (absent ⇒ all)
  * - `h`  comma-separated hidden relations (absent ⇒ default; empty ⇒ none hidden)
+ * - `c`  "1" when coloring by community instead of by dimension
  */
 export const URL_KEYS = {
 	node: "n",
 	layers: "l",
 	hidden: "h",
+	community: "c",
 } as const;
 
 const DIMENSION_SET: ReadonlySet<Dimension> = new Set(ALL_DIMENSIONS);
@@ -25,6 +27,7 @@ export interface ExplorerUrlState {
 	nodeId: string | null;
 	activeLayers: ReadonlySet<Dimension>;
 	hiddenRelations: ReadonlySet<Relation>;
+	colorByCommunity: boolean;
 }
 
 const ALL_LAYERS_SET: ReadonlySet<Dimension> = new Set(ALL_DIMENSIONS);
@@ -57,6 +60,7 @@ export function parseExplorerUrl(
 		nodeId: params.get(URL_KEYS.node),
 		activeLayers,
 		hiddenRelations,
+		colorByCommunity: params.get(URL_KEYS.community) === "1",
 	};
 }
 
@@ -67,6 +71,7 @@ export function applyExplorerPatch(
 		nodeId: string | null;
 		activeLayers: ReadonlySet<Dimension>;
 		hiddenRelations: ReadonlySet<Relation>;
+		colorByCommunity: boolean;
 	}>,
 ): URLSearchParams {
 	if ("nodeId" in patch) {
@@ -86,6 +91,10 @@ export function applyExplorerPatch(
 				ALL_DIMENSIONS.filter((d) => layers.has(d)).join(","),
 			);
 		}
+	}
+	if ("colorByCommunity" in patch) {
+		if (patch.colorByCommunity) params.set(URL_KEYS.community, "1");
+		else params.delete(URL_KEYS.community);
 	}
 	if ("hiddenRelations" in patch && patch.hiddenRelations) {
 		const hidden = patch.hiddenRelations;

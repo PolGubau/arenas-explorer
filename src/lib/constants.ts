@@ -33,6 +33,23 @@ export const RELATION_IDLE_COLORS: Record<Relation, string> = {
 	mismo_año: "#202b2d",
 };
 
+// Paleta categórica para 12 comunidades. Colores saturados sobre fondo oscuro,
+// suficientemente distintos entre sí para que los grupos sean reconocibles.
+export const COMMUNITY_COLORS: string[] = [
+	"#E74C3C", // 0 – rojo
+	"#E67E22", // 1 – naranja
+	"#F1C40F", // 2 – amarillo
+	"#2ECC71", // 3 – verde
+	"#1ABC9C", // 4 – teal
+	"#3498DB", // 5 – azul
+	"#9B59B6", // 6 – violeta
+	"#E91E63", // 7 – rosa
+	"#00BCD4", // 8 – cian
+	"#8BC34A", // 9 – verde lima
+	"#FF5722", // 10 – naranja intenso
+	"#607D8B", // 11 – azul pizarra
+];
+
 export const ALL_DIMENSIONS: Dimension[] = [
 	"imagen",
 	"año",

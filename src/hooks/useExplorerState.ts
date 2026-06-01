@@ -15,6 +15,7 @@ interface ExplorerActions {
 	toggleLayer: (d: Dimension) => void;
 	setLayers: (layers: ReadonlySet<Dimension>) => void;
 	toggleRelation: (rel: Relation) => void;
+	toggleColorByCommunity: () => void;
 }
 
 /**
@@ -73,11 +74,17 @@ export function useExplorerState(): ExplorerUrlState & ExplorerActions {
 		[push, state.hiddenRelations],
 	);
 
+	const toggleColorByCommunity = useCallback(
+		() => push({ colorByCommunity: !state.colorByCommunity }),
+		[push, state.colorByCommunity],
+	);
+
 	return {
 		...state,
 		setSelected,
 		toggleLayer,
 		setLayers,
 		toggleRelation,
+		toggleColorByCommunity,
 	};
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { useExplorerState } from "@/hooks/useExplorerState";
-import { RELATION_COLORS, RELATION_IDLE_COLORS } from "@/lib/constants";
+import {
+  COMMUNITY_COLORS,
+  RELATION_COLORS,
+  RELATION_IDLE_COLORS,
+} from "@/lib/constants";
 import { useGraphStore } from "@/store/graphStore";
 import type { Dimension, Relation } from "@/types/graph";
 import { useSetSettings, useSigma } from "@react-sigma/core";
@@ -15,6 +19,7 @@ interface ReducerCtx {
   hiddenRelations: ReadonlySet<Relation>;
   hoveredNodeId: string | null;
   selectedNodeId: string | null;
+  colorByCommunity: boolean;
 }
 
 /**
@@ -26,8 +31,12 @@ export function GraphReducers() {
   const sigma = useSigma();
   const setSettings = useSetSettings();
 
-  const { nodeId: selectedNodeId, activeLayers, hiddenRelations } =
-    useExplorerState();
+  const {
+    nodeId: selectedNodeId,
+    activeLayers,
+    hiddenRelations,
+    colorByCommunity,
+  } = useExplorerState();
   const hoveredNodeId = useGraphStore((s) => s.hoveredNodeId);
 
   const ctxRef = useRef<ReducerCtx>({
@@ -35,6 +44,7 @@ export function GraphReducers() {
     hiddenRelations,
     hoveredNodeId,
     selectedNodeId,
+    colorByCommunity,
   });
 
   // Install reducers once. They read from `ctxRef.current` so they always
@@ -44,7 +54,12 @@ export function GraphReducers() {
 
     setSettings({
       nodeReducer: (node, data) => {
-        const { activeLayers, hoveredNodeId, selectedNodeId } = ctxRef.current;
+        const {
+          activeLayers,
+          hoveredNodeId,
+          selectedNodeId,
+          colorByCommunity,
+        } = ctxRef.current;
         const dim = (data.dimension ?? "imagen") as Dimension;
         const out = { ...data };
 
@@ -52,6 +67,15 @@ export function GraphReducers() {
           out.hidden = true;
           return out;
         }
+
+        // Resolve the base node color: either from community palette or dimension.
+        if (colorByCommunity) {
+          const communityIdx =
+            Number(data.community ?? 0) % COMMUNITY_COLORS.length;
+          out.color = COMMUNITY_COLORS[communityIdx];
+        }
+
+        const nodeColor = out.color as string;
 
         let isFocus = false;
         if (hoveredNodeId && graph.hasNode(hoveredNodeId)) {
@@ -68,7 +92,7 @@ export function GraphReducers() {
         }
 
         if (selectedNodeId === node) {
-          out.color = data.color;
+          out.color = nodeColor;
           out.size = (data.size ?? 8) * 1.4;
           out.zIndex = 3;
           out.highlighted = true;
@@ -124,9 +148,17 @@ export function GraphReducers() {
       hiddenRelations,
       hoveredNodeId,
       selectedNodeId,
+      colorByCommunity,
     };
     sigma.refresh({ skipIndexation: true });
-  }, [sigma, activeLayers, hiddenRelations, hoveredNodeId, selectedNodeId]);
+  }, [
+    sigma,
+    activeLayers,
+    hiddenRelations,
+    hoveredNodeId,
+    selectedNodeId,
+    colorByCommunity,
+  ]);
 
   return null;
 }
