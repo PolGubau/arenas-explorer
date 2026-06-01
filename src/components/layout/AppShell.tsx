@@ -1,14 +1,23 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useState } from "react";
 import type Graph from "graphology";
+import dynamic from "next/dynamic";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { GraphDataProvider } from "@/context/GraphDataContext";
-import { useGraphData } from "@/hooks/useGraphData";
+import { CommandPalette } from "@/components/CommandPalette";
 import { LayerFilter } from "@/components/graph/LayerFilter";
 import { DetailPanel } from "@/components/panel/DetailPanel";
-import { AlertTriangle, Info, Loader2, Network } from "@/lib/icons";
+import { GraphDataProvider } from "@/context/GraphDataContext";
+import { useExplorerState } from "@/hooks/useExplorerState";
+import { useGraphData } from "@/hooks/useGraphData";
+import {
+	AlertTriangle,
+	Command,
+	Info,
+	Loader2,
+	Network,
+	Search,
+} from "@/lib/icons";
 import type { ImagesIndex } from "@/types/graph";
 
 const GraphCanvas = dynamic(
@@ -27,17 +36,52 @@ export function AppShell() {
 
 	return (
 		<GraphDataProvider graph={graph} imagesIndex={imagesIndex}>
-			<MainLayout graph={graph} />
+			<Suspense fallback={<GlobalLoading />}>
+				<MainLayout graph={graph} />
+			</Suspense>
 		</GraphDataProvider>
 	);
 }
 
 function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	const [panelOpen, setPanelOpen] = useState(true);
+	const [paletteOpen, setPaletteOpen] = useState(false);
+	const { setSelected } = useExplorerState();
+
+	const openPalette = useCallback(() => setPaletteOpen(true), []);
+	const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+	// Global shortcuts: Cmd/Ctrl+K or "/" opens the palette, Esc deselects.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const isTyping =
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable);
+
+			if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				setPaletteOpen((v) => !v);
+				return;
+			}
+			if (e.key === "/" && !isTyping && !paletteOpen) {
+				e.preventDefault();
+				setPaletteOpen(true);
+				return;
+			}
+			if (e.key === "Escape" && !paletteOpen && !isTyping) {
+				setSelected(null);
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [paletteOpen, setSelected]);
 
 	return (
 		<div className="flex h-dvh w-screen flex-col bg-[var(--color-bg)]">
-			<Header />
+			<Header onOpenPalette={openPalette} />
 			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(320px,28rem)]">
 				<section className="relative min-h-0 overflow-hidden border-b border-[var(--color-border)] md:border-b-0 md:border-r">
 					<div className="absolute left-4 right-4 top-4 z-10 flex flex-wrap items-center gap-2">
@@ -53,11 +97,12 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 				</section>
 			</main>
 			<Footer />
+			<CommandPalette open={paletteOpen} onClose={closePalette} />
 		</div>
 	);
 }
 
-function Header() {
+function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
 	return (
 		<header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-3">
 			<div className="flex items-center gap-2.5">
@@ -73,8 +118,22 @@ function Header() {
 					</p>
 				</div>
 			</div>
-			<div className="hidden items-center gap-2 text-[10px] text-[var(--color-fg-subtle)] md:flex">
-				<span>TFM en humanidades digitales</span>
+			<div className="flex items-center gap-3">
+				<button
+					type="button"
+					onClick={onOpenPalette}
+					className="group flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2.5 py-1.5 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+					aria-label="Buscar nodo"
+				>
+					<Search size={12} />
+					<span className="hidden sm:inline">Buscar…</span>
+					<kbd className="ml-1 hidden items-center gap-0.5 rounded border border-[var(--color-border)] px-1 py-px text-[9px] text-[var(--color-fg-subtle)] sm:inline-flex">
+						<Command size={9} />K
+					</kbd>
+				</button>
+				<span className="hidden text-[10px] text-[var(--color-fg-subtle)] md:inline">
+					TFM en humanidades digitales
+				</span>
 			</div>
 		</header>
 	);

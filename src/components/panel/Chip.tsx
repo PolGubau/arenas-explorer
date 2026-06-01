@@ -1,6 +1,6 @@
 "use client";
 
-import { useGraphStore } from "@/store/graphStore";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import { DIMENSION_COLORS } from "@/lib/constants";
 import type { Dimension } from "@/types/graph";
 
@@ -12,7 +12,7 @@ interface ChipProps {
 }
 
 export function Chip({ id, label, dimension, icon }: ChipProps) {
-  const setSelected = useGraphStore((s) => s.setSelected);
+  const { setSelected } = useExplorerState();
   const color = DIMENSION_COLORS[dimension];
 
   return (

@@ -1,17 +1,17 @@
 "use client";
 
-import { useGraphStore } from "@/store/graphStore";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import { useSigma } from "@react-sigma/core";
 import { useEffect, useRef } from "react";
 
 /**
- * When `selectedNodeId` changes from outside the canvas (e.g. clicking a chip
- * in the side panel), fly the camera over the node.
+ * When `nodeId` in the URL changes (e.g. clicking a chip in the side panel
+ * or navigating back/forward), fly the camera over the node.
  * Skips the animation on initial mount.
  */
 export function CameraSync() {
   const sigma = useSigma();
-  const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
+  const { nodeId: selectedNodeId } = useExplorerState();
   const previous = useRef<string | null>(null);
 
   useEffect(() => {

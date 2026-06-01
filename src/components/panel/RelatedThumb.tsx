@@ -1,7 +1,7 @@
 "use client";
 
-import { useGraphStore } from "@/store/graphStore";
 import { useGraphContext } from "@/context/GraphDataContext";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import { ImageIcon } from "@/lib/icons";
 
 interface RelatedThumbProps {
@@ -10,7 +10,7 @@ interface RelatedThumbProps {
 }
 
 export function RelatedThumb({ id, size = 64 }: RelatedThumbProps) {
-  const setSelected = useGraphStore((s) => s.setSelected);
+  const { setSelected } = useExplorerState();
   const { graph, imagesIndex } = useGraphContext();
 
   if (!graph.hasNode(id)) return null;

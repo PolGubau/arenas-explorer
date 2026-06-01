@@ -1,35 +1,50 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSigma, useSetSettings } from "@react-sigma/core";
-import { useGraphStore } from "@/store/graphStore";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import { RELATION_COLORS } from "@/lib/constants";
+import { useGraphStore } from "@/store/graphStore";
 import type { Dimension, Relation } from "@/types/graph";
+import { useSetSettings, useSigma } from "@react-sigma/core";
+import { useEffect, useRef } from "react";
 
 const DIM_OUT_COLOR = "#26262c";
 const EDGE_DIM_COLOR = "#1c1c22";
 
+interface ReducerCtx {
+  activeLayers: ReadonlySet<Dimension>;
+  showSameYear: boolean;
+  hoveredNodeId: string | null;
+  selectedNodeId: string | null;
+}
+
 /**
- * Sets nodeReducer + edgeReducer dynamically from Zustand state.
- * - dimension toggles → hide nodes (never drop, would break FA2 layout)
- * - mismo_año edges → hidden unless explicitly toggled on
- * - hover → ego-graph highlight (neighbours stay vivid, rest dims)
- * - selected → border ring + topmost zIndex
+ * Sets the node/edge reducers ONCE at mount. Subsequent state changes only
+ * update a ref and call `sigma.refresh({ skipIndexation: true })` —
+ * avoiding a fresh `setSettings` and the costly re-allocation it triggers.
  */
 export function GraphReducers() {
   const sigma = useSigma();
   const setSettings = useSetSettings();
 
-  const activeLayers = useGraphStore((s) => s.activeLayers);
-  const showSameYear = useGraphStore((s) => s.showSameYear);
+  const { nodeId: selectedNodeId, activeLayers, showSameYear } =
+    useExplorerState();
   const hoveredNodeId = useGraphStore((s) => s.hoveredNodeId);
-  const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
 
+  const ctxRef = useRef<ReducerCtx>({
+    activeLayers,
+    showSameYear,
+    hoveredNodeId,
+    selectedNodeId,
+  });
+
+  // Install reducers once. They read from `ctxRef.current` so they always
+  // see the latest state without depending on closure capture.
   useEffect(() => {
     const graph = sigma.getGraph();
 
     setSettings({
       nodeReducer: (node, data) => {
+        const { activeLayers, hoveredNodeId, selectedNodeId } = ctxRef.current;
         const dim = (data.dimension ?? "imagen") as Dimension;
         const out = { ...data };
 
@@ -66,6 +81,7 @@ export function GraphReducers() {
       },
 
       edgeReducer: (edge, data) => {
+        const { activeLayers, showSameYear, hoveredNodeId } = ctxRef.current;
         const rel = data.relation as Relation | undefined;
         const out = { ...data };
 
@@ -99,7 +115,18 @@ export function GraphReducers() {
         return out;
       },
     });
-  }, [sigma, setSettings, activeLayers, showSameYear, hoveredNodeId, selectedNodeId]);
+  }, [sigma, setSettings]);
+
+  // Sync ref + trigger a light refresh on every state change.
+  useEffect(() => {
+    ctxRef.current = {
+      activeLayers,
+      showSameYear,
+      hoveredNodeId,
+      selectedNodeId,
+    };
+    sigma.refresh({ skipIndexation: true });
+  }, [sigma, activeLayers, showSameYear, hoveredNodeId, selectedNodeId]);
 
   return null;
 }

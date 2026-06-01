@@ -1,6 +1,6 @@
 "use client";
 
-import { useGraphStore } from "@/store/graphStore";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import {
   ALL_DIMENSIONS,
   DIMENSION_COLORS,
@@ -10,10 +10,8 @@ import { Eye, EyeOff } from "@/lib/icons";
 import type { Dimension } from "@/types/graph";
 
 export function LayerFilter() {
-  const activeLayers = useGraphStore((s) => s.activeLayers);
-  const toggleLayer = useGraphStore((s) => s.toggleLayer);
-  const showSameYear = useGraphStore((s) => s.showSameYear);
-  const toggleSameYear = useGraphStore((s) => s.toggleSameYear);
+  const { activeLayers, toggleLayer, showSameYear, toggleSameYear } =
+    useExplorerState();
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -30,11 +28,10 @@ export function LayerFilter() {
         type="button"
         onClick={toggleSameYear}
         aria-pressed={showSameYear}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-          showSameYear
+        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${showSameYear
             ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
             : "border-[var(--color-border)] bg-transparent text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
-        }`}
+          }`}
         title="Mostrar aristas «mismo año» (1596 aristas — ruido visual)"
       >
         {showSameYear ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -59,11 +56,10 @@ function LayerChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
-        active
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${active
           ? "border-[var(--color-border-strong)] bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
           : "border-[var(--color-border)] bg-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-muted)]"
-      }`}
+        }`}
     >
       <span
         aria-hidden

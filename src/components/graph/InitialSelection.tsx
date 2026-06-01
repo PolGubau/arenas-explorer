@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useSigma } from "@react-sigma/core";
-import { useGraphStore } from "@/store/graphStore";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import type { Dimension } from "@/types/graph";
+import { useSigma } from "@react-sigma/core";
+import { useEffect, useRef } from "react";
 
 /**
- * On first render, selects the imagen node with the highest degree.
- * Runs only once per Sigma mount.
+ * If the URL already carries a `?n=<id>`, leave selection untouched.
+ * Otherwise pick the imagen node with the highest degree as a sensible entry
+ * point. Runs only once per Sigma mount.
  */
 export function InitialSelection() {
   const sigma = useSigma();
-  const setSelected = useGraphStore((s) => s.setSelected);
+  const { nodeId, setSelected } = useExplorerState();
   const done = useRef(false);
 
   useEffect(() => {
     if (done.current) return;
+    if (nodeId) {
+      done.current = true;
+      return;
+    }
     const graph = sigma.getGraph();
     if (graph.order === 0) return;
 
@@ -34,7 +39,7 @@ export function InitialSelection() {
       done.current = true;
       setSelected(bestId);
     }
-  }, [sigma, setSelected]);
+  }, [sigma, nodeId, setSelected]);
 
   return null;
 }

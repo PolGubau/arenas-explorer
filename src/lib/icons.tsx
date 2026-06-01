@@ -21,4 +21,9 @@ export {
   EyeOff,
   Loader2,
   AlertTriangle,
+  Search,
+  Link2,
+  Check,
+  Command,
+  CornerDownLeft,
 } from "lucide-react";

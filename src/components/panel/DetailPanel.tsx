@@ -1,12 +1,14 @@
 "use client";
 
 import { useGraphContext } from "@/context/GraphDataContext";
+import { useExplorerState } from "@/hooks/useExplorerState";
 import { useNodeNeighbors } from "@/hooks/useNodeNeighbors";
 import { DIMENSION_LABELS } from "@/lib/constants";
 import { Calendar, ImageIcon, Shirt, TypeIcon, X } from "@/lib/icons";
-import { useGraphStore } from "@/store/graphStore";
 import type { Dimension } from "@/types/graph";
 import { AnimatePresence, motion } from "framer-motion";
+
+import { ShareButton } from "./ShareButton";
 
 import { Chip } from "./Chip";
 import { ConnectionSection } from "./ConnectionSection";
@@ -20,7 +22,7 @@ interface DetailPanelProps {
 }
 
 export function DetailPanel({ onClose }: DetailPanelProps) {
-	const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
+	const { nodeId: selectedNodeId } = useExplorerState();
 	const { graph } = useGraphContext();
 
 	const hasNode =
@@ -49,7 +51,7 @@ export function DetailPanel({ onClose }: DetailPanelProps) {
 }
 
 function DetailHeader({ onClose }: { onClose?: () => void }) {
-	const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
+	const { nodeId: selectedNodeId, setSelected } = useExplorerState();
 	const { graph } = useGraphContext();
 	if (!selectedNodeId || !graph.hasNode(selectedNodeId)) return null;
 
@@ -57,16 +59,21 @@ function DetailHeader({ onClose }: { onClose?: () => void }) {
 	return (
 		<div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-3">
 			<DimensionBadge dimension={dimension} />
-			{onClose && (
+			<div className="flex items-center gap-1">
+				<ShareButton />
 				<button
 					type="button"
-					onClick={onClose}
+					onClick={() => {
+						setSelected(null);
+						onClose?.();
+					}}
 					aria-label="Cerrar panel"
+					title="Cerrar (Esc)"
 					className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-fg-muted)] transition-colors hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-fg)]"
 				>
 					<X size={14} />
 				</button>
-			)}
+			</div>
 		</div>
 	);
 }
