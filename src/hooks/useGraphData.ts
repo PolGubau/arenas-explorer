@@ -66,23 +66,7 @@ export function useGraphData(): UseGraphDataResult {
 					g.addEdge(e.source, e.target, { relation: e.relation });
 				}
 
-				// Preload image textures so Sigma renders them on first paint.
-				// Failures fall back silently to the colored circle.
-				const imageUrls = Object.values(index)
-					.map((m) => m.url)
-					.filter((u): u is string => !!u);
-				await Promise.allSettled(
-					imageUrls.map(
-						(url) =>
-							new Promise<void>((resolve) => {
-								const img = new window.Image();
-								img.onload = () => resolve();
-								img.onerror = () => resolve();
-								img.src = url;
-							}),
-					),
-				);
-
+				// Show graph immediately — NodeImageProgram handles its own lazy loading.
 				if (cancelled) return;
 				setGraph(g);
 				setImagesIndex(index);
