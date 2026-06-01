@@ -119,7 +119,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
 					transition={{ duration: 0.12 }}
-					className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm"
+					className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-3 pt-[8vh] backdrop-blur-sm sm:px-4 sm:pt-[12vh]"
 					onClick={onClose}
 				>
 					<motion.div
@@ -149,7 +149,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 						</div>
 						<div
 							ref={listRef}
-							className="scroll-thin max-h-[50vh] overflow-y-auto py-1"
+							className="scroll-thin max-h-[60vh] overflow-y-auto py-1 sm:max-h-[50vh]"
 						>
 							{results.length === 0 ? (
 								<p className="px-4 py-6 text-center text-xs text-[var(--color-fg-subtle)]">
@@ -163,11 +163,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 										data-idx={i}
 										onMouseEnter={() => setActive(i)}
 										onClick={() => commit(h)}
-										className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${
-											i === active
-												? "bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
-												: "text-[var(--color-fg-muted)]"
-										}`}
+										className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${i === active
+											? "bg-[var(--color-bg-overlay)] text-[var(--color-fg)]"
+											: "text-[var(--color-fg-muted)]"
+											}`}
 									>
 										<span
 											aria-hidden

@@ -14,7 +14,7 @@ function CtrlBtn({ label, children, ...rest }: CtrlBtnProps) {
       type="button"
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/80 text-[var(--color-fg-muted)] backdrop-blur transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40"
+      className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/80 text-[var(--color-fg-muted)] backdrop-blur transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-overlay)] hover:text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40 sm:h-9 sm:w-9"
       {...rest}
     >
       {children}
@@ -28,7 +28,7 @@ export function GraphControls() {
   const sigma = useSigma();
 
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-4 z-10 flex items-center gap-1.5">
+    <div className="pointer-events-auto absolute bottom-3 left-3 z-10 flex items-center gap-1 sm:bottom-4 sm:left-4 sm:gap-1.5">
       <CtrlBtn label="Acercar" onClick={() => zoomIn()}>
         <ZoomIn size={16} />
       </CtrlBtn>

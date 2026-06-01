@@ -1,6 +1,7 @@
 "use client";
 
 import type Graph from "graphology";
+import { AnimatePresence, motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
@@ -15,7 +16,7 @@ import {
 	Command,
 	Info,
 	Loader2,
-	Network,
+	PanelRightOpen,
 	Search,
 } from "@/lib/icons";
 import type { ImagesIndex } from "@/types/graph";
@@ -44,12 +45,19 @@ export function AppShell() {
 }
 
 function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
-	const [panelOpen, setPanelOpen] = useState(true);
+	const [panelOpen, setPanelOpen] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
-	const { setSelected } = useExplorerState();
+	const { nodeId, setSelected } = useExplorerState();
+	const hasSelection = nodeId != null && graph.hasNode(nodeId);
 
 	const openPalette = useCallback(() => setPaletteOpen(true), []);
 	const closePalette = useCallback(() => setPaletteOpen(false), []);
+	const closePanel = useCallback(() => setPanelOpen(false), []);
+
+	// On mobile, auto-open the bottom sheet whenever a new node is selected.
+	useEffect(() => {
+		if (hasSelection) setPanelOpen(true);
+	}, [hasSelection, nodeId]);
 
 	// Global shortcuts: Cmd/Ctrl+K or "/" opens the palette, Esc deselects.
 	useEffect(() => {
@@ -73,6 +81,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 			}
 			if (e.key === "Escape" && !paletteOpen && !isTyping) {
 				setSelected(null);
+				setPanelOpen(false);
 			}
 		};
 		window.addEventListener("keydown", onKey);
@@ -83,46 +92,116 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 		<div className="flex h-dvh w-screen flex-col bg-[var(--color-bg)]">
 			<Header onOpenPalette={openPalette} />
 			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(320px,28rem)]">
-				<section className="relative min-h-0 overflow-hidden border-b border-[var(--color-border)] md:border-b-0 md:border-r">
-					<div className="absolute left-4 right-4 top-4 z-10 flex flex-wrap items-center gap-2">
+				<section className="relative min-h-0 overflow-hidden">
+					<div className="absolute left-3 right-3 top-3 z-10 sm:left-4 sm:right-4 sm:top-4">
 						<LayerFilter />
 					</div>
 					<GraphCanvas graph={graph} />
 					<LegendHint />
 				</section>
-				<section
-					className={`min-h-0 ${panelOpen ? "block" : "hidden md:block"}`}
-				>
-					<DetailPanel onClose={() => setPanelOpen(false)} />
+				{/* Desktop side panel */}
+				<section className="hidden min-h-0 md:block">
+					<DetailPanel onClose={closePanel} />
 				</section>
 			</main>
 			<Footer />
+
+			{/* Mobile bottom sheet (rendered outside the grid) */}
+			<MobileSheet open={panelOpen} onClose={closePanel}>
+				<DetailPanel onClose={closePanel} />
+			</MobileSheet>
+
+			{/* Mobile FAB to re-open the sheet when minimised */}
+			<AnimatePresence>
+				{hasSelection && !panelOpen && (
+					<motion.button
+						type="button"
+						onClick={() => setPanelOpen(true)}
+						initial={{ opacity: 0, y: 12 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: 12 }}
+						transition={{ duration: 0.18 }}
+						className="pb-safe fixed bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)]/95 px-3.5 py-2 text-[11px] font-medium text-[var(--color-fg)] shadow-lg backdrop-blur md:hidden"
+					>
+						<PanelRightOpen size={13} />
+						Ver detalles
+					</motion.button>
+				)}
+			</AnimatePresence>
+
 			<CommandPalette open={paletteOpen} onClose={closePalette} />
+		</div>
+	);
+}
+
+function MobileSheet({
+	open,
+	onClose,
+	children,
+}: {
+	open: boolean;
+	onClose: () => void;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="md:hidden">
+			<AnimatePresence>
+				{open && (
+					<motion.div
+						key="backdrop"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.18 }}
+						className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+						onClick={onClose}
+					/>
+				)}
+			</AnimatePresence>
+			<AnimatePresence>
+				{open && (
+					<motion.aside
+						key="sheet"
+						initial={{ y: "100%" }}
+						animate={{ y: 0 }}
+						exit={{ y: "100%" }}
+						transition={{ type: "tween", duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+						className="pb-safe fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-2xl"
+					>
+						<div className="flex shrink-0 items-center justify-center py-2">
+							<button
+								type="button"
+								onClick={onClose}
+								aria-label="Cerrar panel"
+								className="h-1.5 w-12 rounded-full bg-[var(--color-border-strong)] transition-colors hover:bg-[var(--color-fg-subtle)]"
+							/>
+						</div>
+						<div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+					</motion.aside>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }
 
 function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
 	return (
-		<header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-3">
-			<div className="flex items-center gap-2.5">
-				<span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-accent)]">
-					<Network size={14} />
-				</span>
-				<div className="leading-tight">
-					<h1 className="text-sm font-semibold tracking-tight text-[var(--color-fg)]">
+		<header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] px-3 py-2.5 sm:px-5 sm:py-3">
+			<div className="flex min-w-0 items-center gap-2.5">
+				<div className="min-w-0 leading-tight">
+					<h1 className="truncate text-sm font-semibold tracking-tight text-[var(--color-fg)]">
 						Fondo Fotográfico Areñas
 					</h1>
-					<p className="text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)]">
-						Explorador semántico · 1909—1935
+					<p className="hidden truncate text-[10px] uppercase tracking-wider text-[var(--color-fg-subtle)] sm:block">
+						Exploración semántica del patrimonio
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-3">
+			<div className="flex shrink-0 items-center gap-3">
 				<button
 					type="button"
 					onClick={onOpenPalette}
-					className="group flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2.5 py-1.5 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)]"
+					className="group flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2 py-1.5 text-[11px] text-[var(--color-fg-muted)] transition-colors hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg)] sm:px-2.5"
 					aria-label="Buscar nodo"
 				>
 					<Search size={12} />
@@ -141,13 +220,15 @@ function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
 
 function Footer() {
 	return (
-		<footer className="flex shrink-0 items-center justify-between gap-4 border-t border-[var(--color-border)] px-5 py-2 text-[10px] text-[var(--color-fg-subtle)]">
-			<span>740 nodos · 4120 aristas · ForceAtlas2 pre-calculado</span>
+		<footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--color-border)] px-3 py-2 text-[10px] text-[var(--color-fg-subtle)] sm:px-5">
+			<span className="hidden truncate sm:inline">
+				740 nodos · 4120 aristas · ForceAtlas2 pre-calculado
+			</span>
 			<a
 				href="https://polgubau.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="font-medium text-[var(--color-fg-muted)] transition-colors hover:text-[var(--color-fg)]"
+				className="ml-auto font-medium text-[var(--color-fg-muted)] transition-colors hover:text-[var(--color-fg)]"
 			>
 				polgubau.com
 			</a>

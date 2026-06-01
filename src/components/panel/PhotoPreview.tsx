@@ -62,7 +62,7 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 				)}
 			</div>
 
-			<dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+			<dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[11px] sm:grid-cols-2">
 				{year != null && (
 					<MetaRow label="Año predicho" value={String(year)} />
 				)}

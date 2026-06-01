@@ -9,7 +9,7 @@ interface RelatedThumbProps {
   size?: number;
 }
 
-export function RelatedThumb({ id, size = 64 }: RelatedThumbProps) {
+export function RelatedThumb({ id, size }: RelatedThumbProps) {
   const { setSelected } = useExplorerState();
   const { graph, imagesIndex } = useGraphContext();
 
@@ -17,13 +17,19 @@ export function RelatedThumb({ id, size = 64 }: RelatedThumbProps) {
   const meta = imagesIndex[id];
   const year = graph.getNodeAttribute(id, "year") as number | undefined;
 
+  // When `size` is omitted the thumb fills its grid cell as a square.
+  const style = size ? { width: size, height: size } : undefined;
+  const className = size
+    ? "group relative overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40"
+    : "group relative aspect-square w-full overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40";
+
   return (
     <button
       type="button"
       onClick={() => setSelected(id)}
       title={meta?.caption || id}
-      style={{ width: size, height: size }}
-      className="group relative overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] transition-all hover:border-[var(--color-border-strong)] hover:ring-1 hover:ring-[var(--color-accent)]/40"
+      style={style}
+      className={className}
     >
       {meta?.url ? (
         // eslint-disable-next-line @next/next/no-img-element

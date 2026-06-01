@@ -29,7 +29,7 @@ export function DetailPanel({ onClose }: DetailPanelProps) {
 		selectedNodeId != null && graph.hasNode(selectedNodeId);
 
 	return (
-		<aside className="scroll-thin flex h-full flex-col overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg)]">
+		<aside className="scroll-thin flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] md:border-l md:border-[var(--color-border)]">
 			<AnimatePresence mode="wait">
 				{hasNode ? (
 					<motion.div
@@ -185,7 +185,7 @@ function ImageView({ nodeId }: { nodeId: string }) {
 				icon={<Calendar size={14} />}
 				count={neighbours.mismo_año.length}
 			>
-				<div className="grid grid-cols-4 gap-1.5">
+				<div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
 					{neighbours.mismo_año.slice(0, 32).map((id) => (
 						<RelatedThumb key={id} id={id} />
 					))}

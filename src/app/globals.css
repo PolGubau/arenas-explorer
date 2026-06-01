@@ -61,3 +61,17 @@ body {
 .scroll-thin::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* hide scrollbar (used on horizontal scroll chips) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* safe-area aware padding for mobile bottom sheets */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}

@@ -26,4 +26,7 @@ export {
   Check,
   Command,
   CornerDownLeft,
+  ChevronUp,
+  ChevronDown,
+  PanelRightOpen,
 } from "lucide-react";

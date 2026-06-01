@@ -17,6 +17,9 @@ import { join } from "node:path";
 import Graph from "graphology";
 import gexf from "graphology-gexf";
 import forceAtlas2 from "graphology-layout-forceatlas2";
+import noverlap from "graphology-layout-noverlap";
+import circular from "graphology-layout/circular";
+
 import type {
 	Dimension,
 	GraphData,
@@ -27,6 +30,11 @@ import type {
 	Relation,
 } from "../src/types/graph";
 
+// Mirrors `nodeSizeFromDegree` in src/lib/constants.ts so the layout
+// (FA2 with adjustSizes + noverlap) reasons about the same radii Sigma renders.
+function nodeSize(degree: number): number {
+	return 6 + Math.log1p(degree) * 4;
+}
 const ROOT = process.cwd();
 const GEXF_PATH = join(ROOT, "data", "grafo.gexf");
 const CSV_PATH = join(ROOT, "data", "input.csv");
@@ -75,27 +83,69 @@ function main() {
 
 	console.log(`  ${graph.order} nodes · ${graph.size} edges`);
 
-	// Seed positions before FA2 (it needs initial x/y on every node).
+	// 1. Deterministic circular seed → avoids the random-clump start that
+	//    causes FA2 to settle into a dense central blob.
+	console.log("→ Seeding with circular layout…");
+	circular.assign(graph, { scale: Math.max(500, graph.order) });
+
+	// 2. Pre-assign sizes so FA2 (adjustSizes) and noverlap respect them.
 	graph.forEachNode((node, attrs) => {
-		if (typeof attrs.x !== "number" || typeof attrs.y !== "number") {
-			graph.mergeNodeAttributes(node, {
-				x: Math.random() * 100 - 50,
-				y: Math.random() * 100 - 50,
-			});
-		}
+		const degree = Number(attrs.degree_static ?? graph.degree(node));
+		graph.setNodeAttribute(node, "size", nodeSize(degree));
 	});
 
-	console.log("→ Running ForceAtlas2 (500 iterations)…");
+	// 3. ForceAtlas2 — tuned for multidimensional graphs with communities:
+	//    - linLogMode: spreads communities into readable clusters
+	//    - outboundAttractionDistribution: hubs don't absorb their neighbours
+	//    - low gravity + high scalingRatio: less central collapse
+	//    - adjustSizes: nodes repel based on their visual radius
+	const inferred = forceAtlas2.inferSettings(graph);
+	const fa2Iterations = graph.order > 1000 ? 2500 : 1500;
+	console.log(`→ Running ForceAtlas2 (${fa2Iterations} iterations)…`);
 	forceAtlas2.assign(graph, {
-		iterations: 500,
+		iterations: fa2Iterations,
 		settings: {
-			gravity: 1,
+			...inferred,
+			linLogMode: true,
+			outboundAttractionDistribution: true,
+			adjustSizes: true,
+			gravity: 0.05,
 			scalingRatio: 10,
 			strongGravityMode: false,
 			barnesHutOptimize: true,
-			adjustSizes: false,
-			linLogMode: false,
-			outboundAttractionDistribution: false,
+			barnesHutTheta: 0.8,
+			edgeWeightInfluence: 1,
+			slowDown: 1,
+		},
+	});
+
+	// 4. Anti-collision pass — eliminates residual node overlap without
+	//    destroying the FA2 cluster structure. Ratio is derived from the
+	//    layout's actual coordinate span so node sizes map into graph units.
+	let minX = Infinity;
+	let maxX = -Infinity;
+	let minY = Infinity;
+	let maxY = -Infinity;
+	graph.forEachNode((_id, attrs) => {
+		const x = Number(attrs.x);
+		const y = Number(attrs.y);
+		if (x < minX) minX = x;
+		if (x > maxX) maxX = x;
+		if (y < minY) minY = y;
+		if (y > maxY) maxY = y;
+	});
+	const span = Math.max(maxX - minX, maxY - minY) || 1;
+	const meanSpacing = span / Math.sqrt(graph.order);
+	const noverlapRatio = meanSpacing / 30;
+	console.log("→ Running noverlap (anti-collision)…");
+	noverlap.assign(graph, {
+		maxIterations: 200,
+		settings: {
+			ratio: noverlapRatio,
+			margin: noverlapRatio * 2,
+			expansion: 1.2,
+			gridSize: 50,
+			speed: 4,
 		},
 	});
 
