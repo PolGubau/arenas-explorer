@@ -7,7 +7,7 @@ import {
 import { MiniMap } from "@react-sigma/minimap";
 import { createNodeImageProgram } from "@sigma/node-image";
 import type Graph from "graphology";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Settings } from "sigma/settings";
 import type { NodeDisplayData, PartialButFor } from "sigma/types";
 import "@react-sigma/core/lib/style.css";
@@ -143,7 +143,22 @@ function LoadGraph({ graph }: { graph: Graph }) {
   return null;
 }
 
+/** Only true after mount and only on viewports ≥ 640 px (Tailwind `sm`). */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
+
 export function GraphCanvas({ graph }: GraphCanvasProps) {
+  const isDesktop = useIsDesktop();
+
   return (
     <SigmaContainer
       style={{ width: "100%", height: "100%", background: "transparent" }}
@@ -157,9 +172,11 @@ export function GraphCanvas({ graph }: GraphCanvasProps) {
       <GraphControls />
       <NodeTooltip />
       <CommunityLabels />
-      <div className="absolute bottom-16 left-3 z-20 hidden overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-md sm:bottom-20 sm:left-4 sm:block">
-        <MiniMap width="140px" height="140px" />
-      </div>
+      {isDesktop && (
+        <div className="absolute bottom-16 left-3 z-20 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-md sm:bottom-20 sm:left-4">
+          <MiniMap width="140px" height="140px" />
+        </div>
+      )}
     </SigmaContainer>
   );
 }

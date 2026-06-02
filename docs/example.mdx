@@ -1,0 +1,191 @@
+---
+title: "Flatmatch"
+startedAt: "2025-08-14"
+endedAt: "2026-02-12"
+category: "web"
+color: "#4fc1c080"
+cover: "./img/flatmatch.webp"
+available: true
+client: "ErasmusLife Barcelona"
+
+summary: "Tinder-like web app to find your ideal home based on your preferences and needs. Create a profile, set your criteria, and swipe through potential matches to discover the perfect place to live."
+
+githubLink: https://github.com/PolGubau/flatmatch
+link: https://flatmatchweb.vercel.app/
+
+tech:
+  - react
+  - react-router
+  - tailwindcss
+  - typescript
+  - vite
+---
+
+import { Image } from "astro:assets";
+
+import form_1type from "../../assets/media/projects/flatmatch/1-type.webp";
+import form_2location from "../../assets/media/projects/flatmatch/2-location.webp";
+import form_3commodities from "../../assets/media/projects/flatmatch/3-commodities.webp";
+import form_4company from "../../assets/media/projects/flatmatch/4-company.webp";
+import form_5metadata from "../../assets/media/projects/flatmatch/5-metadata.webp";
+import form_6preferences from "../../assets/media/projects/flatmatch/6-preferences.webp";
+import form_7rules from "../../assets/media/projects/flatmatch/7-rules.webp";
+import form_8timings from "../../assets/media/projects/flatmatch/8-timings.webp";
+import form_9preview from "../../assets/media/projects/flatmatch/9-preview.webp";
+import details_modal from "../../assets/media/projects/flatmatch/details-modal.webp";
+import favs from "../../assets/media/projects/flatmatch/favs.webp";
+import home from "../../assets/media/projects/flatmatch/home.webp";
+import login from "../../assets/media/projects/flatmatch/login.webp";
+import no_account from "../../assets/media/projects/flatmatch/no-account.webp";
+import profile_after_create_room from "../../assets/media/projects/flatmatch/profile-after-create.webp";
+import profile from "../../assets/media/projects/flatmatch/profile.webp";
+import tinder_like from "../../assets/media/projects/flatmatch/tinder-like.webp";
+import flatmatch from "./img/flatmatch.webp";
+
+
+
+# Flatmatch - Find your ideal place to live
+
+Flatmatch is a web app designed to help **Erasmus students and young professionals easily find short and mid term housing** across the world. Inspired by swipe-based apps like Tinder, but applied to the rental market, Flatmatch makes the housing search **fast, visual, and engaging**.
+
+The concept is simple: swipe through listings until you find your match.
+
+<Image src={flatmatch} alt="Flatmatch thumbnail" height={500} class={"show-animation rounded-2xl"}  loading={"eager"} />
+---
+
+## Key Features
+- **Tinder-like swiping interface**: Swipe right to save a property to your favorites, swipe left to dismiss it.
+- **Favorites section**: Easily access and manage your saved properties.
+- **Real-time chat**: (Coming soon) Communicate directly with landlords and property managers.
+- **In App payment**: (Coming soon) Securely pay deposits and rent through the app.
+- **Profile management**: Create and manage your user profile and listings.
+- **International focus**: The app is available in multiple languages, automatically adapting to the user's browser language.
+- **Easy property publishing**: Landlords can quickly create and publish listings through a guided multi-step form.
+
+## Core Features
+
+The app is structured into **four main pages**:
+
+### Home (Explore Properties)
+
+The landing page presents a **Tinder-like card stack interface**, where users can:
+
+* Swipe **left** to dismiss a property.
+* Swipe **right** to add it to favorites.
+* Scroll vertically on a card to see more details.
+
+<Image src={tinder_like} alt="Tinder-like experience" height={700} class={"show-animation rounded-2xl"} />
+
+---
+
+### Favorites
+
+This section gathers all properties saved with a **right swipe**. Users can:
+
+* Browse the list of saved properties.
+* Open the **details view** for more information.
+* From the detail modal, directly **contact the landlord**.
+
+<div class="flex flex-wrap gap-4">
+<Image src={favs} alt="Favorites in Flatmatch" height={500} class={"show-animation rounded-2xl"} />
+<Image src={details_modal} alt="Property details modal" height={500} class={"show-animation rounded-2xl"} />
+</div>
+---
+
+### Chats
+
+The **Chats tab** will soon allow real-time conversations between landlords and tenants. 
+
+At the moment, this feature is still under development.
+
+---
+
+### Profile
+
+Users can manage their identity and listings in the **Profile section**:
+
+* Complete their **personal profile**.
+* View and manage **their own published properties**.
+<div class="flex flex-wrap gap-4">
+<Image src={profile} alt="User profile" height={450} class={"show-animation rounded-2xl"} />
+<Image src={profile_after_create_room} alt="Profile after creating a listing" height={450} class={"show-animation rounded-2xl"} />
+</div>
+---
+
+## Property Creation Flow
+
+Publishing a property on Flatmatch is straightforward, broken down into **guided steps** to make sure every listing is accurate and attractive.
+
+Instead of overwhelming users with a long form, the process is divided into **9 simple steps**:
+
+1. **Property Type**
+
+In this step, users select the type of property they are listing (e.g., apartment, shared room).
+
+   <Image src={form_1type} alt="Select type of property" height={600} class={"show-animation rounded-2xl"} />
+
+2. **Location**
+
+In this step, users specify the location of the property, this is done with an autocomplete input powered by all streets in the world, selecting the desired street will automatically set the coordinates, postal code, city name and country name of the property so the user doesn't have to fill them manually.
+   <Image src={form_2location} alt="Set location" height={600} class={"show-animation rounded-2xl"} />
+
+3. **Commodities & Amenities**
+
+In this step, users can select the amenities and commodities available in the property (e.g., Wi-Fi, kitchen, washing machine) Also the amount of bathrooms, bedrooms and the size of the property.
+   <Image src={form_3commodities} alt="Choose amenities" height={600} class={"show-animation rounded-2xl"} />
+
+4. **Company**
+
+If the property is shared, the landlord can specify details about the current roommates living in the property and also if the landlord lives in the property.
+   <Image src={form_4company} alt="Roommates and landlord details" height={600} class={"show-animation rounded-2xl"} />
+
+5. **Metadata (Price, Size, etc.)**
+
+In this step, users provide key details about the property, including its price, name, visible description, and upload photos to showcase the space.
+   <Image src={form_5metadata} alt="Metadata form" height={600} class={"show-animation rounded-2xl"} />
+
+6. **Tenant Preferences**
+
+In this step, landlords can specify any preferences they have for potential tenants, such as age range, occupation, or gender.
+   <Image src={form_6preferences} alt="Tenant preferences" height={600} class={"show-animation rounded-2xl"} />
+
+7. **House Rules**
+In this step, landlords can set specific house rules that tenants must agree to, such as no smoking or no pets.
+   <Image src={form_7rules} alt="Set house rules" height={600} class={"show-animation rounded-2xl"} />
+
+8. **Availability & Timing**
+In this step, landlords can specify the availability of the property, including move-in dates and minimum/maximum stay durations.
+   <Image src={form_8timings} alt="Availability" height={600} class={"show-animation rounded-2xl"} />
+
+9. **Preview & Publish**
+In the final step, users can review all the information they have entered, make any necessary edits, and then publish the listing to make it live on the platform.
+   <Image src={form_9preview} alt="Listing preview" height={600} class={"show-animation rounded-2xl"} />
+
+---
+
+## Tech Stack
+
+Flatmatch is built with modern, fast, and scalable technologies:
+
+| Technology                         | Purpose                           |
+| ---------------------------------- | --------------------------------- |
+| **React**                          | Core UI library                   |
+| **React Router**                   | Navigation and routing            |
+| **TailwindCSS + Radix Primitives** | Styling and accessible components |
+| **TypeScript**                     | Type safety and maintainability   |
+| **Vite**                           | Fast bundling and development     |
+| **@polgubau/utils**           | Custom utility functions          |
+| **Supabase**                       | Backend-as-a-Service (BaaS)       |
+| **open-map-geocoder**            | Address autocomplete              |
+
+---
+
+## Future plans
+
+Flatmatch is an ongoing project with many exciting features planned, including:
+* **Real-time chat** between landlords and tenants.
+* **Advanced filtering** options for property searches.
+* **User reviews and ratings** for properties and landlords.
+* **Mobile app** for on-the-go browsing and swiping.
+* **Flatmates matching** based on lifestyle and preferences.
+* **Subscription plans** for landlords with premium features.

@@ -1,0 +1,48 @@
+---
+title: "Explorador del Fondo Areñas"
+summary: "Visualización interactiva WebGL de un grafo de conocimiento construido sobre 564 fotografías teatrales de Barcelona (1909–1935). Parte práctica del TFM de Sara Gálvez Torres en Humanidades Digitales (UAB) para la puesta en valor del patrimonio documental."
+available: true
+client: "Universitat Autònoma de Barcelona"
+endedAt: "2026-06-01"
+timeline: 3
+color: "#7c5c3a90"
+services_provided:
+  - Web
+  - Pipeline de datos
+  - Humanidades Digitales
+cover: "../../assets/media/projects/arenas/thumbnail.png"
+logo: "../../assets/media/projects/arenas/icon.svg"
+---
+
+import { Image } from "astro:assets";
+
+import thumbnail from "../../assets/media/projects/arenas/home.png";
+import grafoNoFotos from "../../assets/media/projects/arenas/grafo-no-fotos.png";
+import grafoGephi from "../../assets/media/projects/arenas/grafo-gephi.png";
+import thumbnail2 from "../../assets/media/projects/arenas/thumbnail2.png";
+
+Este proyecto nace como la materialización práctica del Trabajo de Final de Máster de **Sara Gálvez Torres** en la Universitat Autònoma de Barcelona. Durante su investigación en la Fundación Instituto Amatller, Sara identificó un corpus de 564 negativos de vidrio de Rafael Areñas que documentan la escena teatral barcelonesa entre 1909 y 1935. El reto era transformar una masa crítica de placas de vidrio en un **espacio de memoria viva y computable**.
+
+<Image src={thumbnail} alt="Explorador del Fondo Areñas" width={1000} data-reveal class={"rounded-4xl w-full bg-muted my-20!"} />
+
+La base teórica del proyecto aborda un problema estructural de la archivística tradicional: la dispersión semántica. Como señala Sara en su tesis, los catálogos convencionales suelen "secuestrar" la información en fichas aisladas. Una fotografía de Areñas no es solo una imagen; es el punto de intersección de un actor, un autor, un teatro y una compañía. Inspirándonos en las intuiciones de **René Huyghe** sobre el pensamiento visual asociativo, decidimos romper con la estructura rígida de las tablas SQL para adoptar un modelo de **Grafo de Conocimiento**.
+
+Construimos un portal donde cada fotografía es un nodo conectado a través de relaciones semánticas explícitas. Implementamos un pipeline que cruza los metadatos históricos con tres capas de análisis extraídas mediante modelos: la datación estimada, la detección de vestimenta y la transcripción HTR de anotaciones manuscritas. El resultado es una red de **740 nodos y 4 120 aristas** que permite "taxonomizar lo inabarcable".
+
+<Image src={grafoGephi} alt="Vista del grafo de conocimiento" width={1000} data-reveal class={"rounded-4xl w-full bg-muted my-20!"} />
+
+Para que la navegación fuera fluida a pesar de la densidad de datos, apostamos por WebGL con Sigma.js. Cada nodo imagen proyecta la fotografía real como una textura circular, permitiendo al investigador ver el patrón global del fondo sin perder el detalle del objeto físico. Para resolver las restricciones de acceso de los archivos estatales, desarrollamos un proxy de imagen que sirve el contenido en tiempo real de forma segura.
+
+Un aspecto técnico clave fue la decisión de no ejecutar el layout en el cliente. El algoritmo **ForceAtlas2** corre durante el proceso de build, realizando 500 iteraciones sobre el grafo original para fijar las coordenadas espaciales. Esto garantiza que la experiencia sea instantánea: el usuario entra directamente en la constelación de datos ya organizada, ahorrando ciclos de CPU en el navegador.
+
+<Image src={grafoNoFotos} alt="Grafo con capas de metadatos activas" width={1000} data-reveal class={"rounded-4xl w-full bg-muted my-20!"} />
+
+La interfaz utiliza un diseño de pantalla dividida donde el grafo es el protagonista absoluto y el panel lateral actúa como contexto dinámico. Mediante transiciones suaves de crossfade, el explorador permite saltar de una fotografía a la red de un actor específico o a un año concreto, permitiendo que la interfaz se convierta en una herramienta de descubrimiento heurístico.
+
+<Image src={thumbnail2} alt="Panel lateral contextual con detalles del TFM" width={1000} data-reveal class={"rounded-4xl w-full bg-muted my-20!"} />
+
+**Impacto del TFM**
+- **564 placas de vidrio** digitalizadas y conectadas semánticamente
+- **Modelo de Grafo** que supera las limitaciones de la catalogación tradicional
+- **Integración multimodal**: visión por computador y HTR aplicadas al patrimonio
+- **Pipeline estático**: máximo rendimiento mediante pre-calculación de layouts en build
