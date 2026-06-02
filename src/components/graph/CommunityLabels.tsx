@@ -4,81 +4,94 @@ import { useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
 import { COMMUNITY_COLORS } from "@/lib/constants";
 import { useSigma } from "@react-sigma/core";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
+
+interface ChipPos {
+	x: number;
+	y: number;
+}
 
 /**
  * Floating chips rendered at each community centroid (in graph coords),
- * projected to viewport pixels on every camera/render update.
+ * re-projected to viewport pixels whenever the camera moves or Sigma
+ * re-renders. Always visible (independent of the `colorByCommunity` toggle);
+ * chip color follows the community palette when the toggle is active,
+ * neutral otherwise.
  *
- * Always visible (independent of the colorByCommunity toggle) so the
- * topology stays legible; chip colors follow the community palette when the
- * toggle is active, otherwise use a neutral style.
- *
- * Implementation notes
- * ────────────────────
- * • `useLayoutEffect` for the initial tick so it fires synchronously after
- *   the first paint — avoids a frame where all chips sit at (0,0) because
- *   Sigma hasn't normalised coordinates yet.
- * • `graphToViewport` is wrapped in a try/catch: before the graph is fully
- *   loaded the normalisation function may return NaN; we skip those frames
- *   and rely on the `afterRender` listener to re-project once Sigma is ready.
- * • z-30 ensures the overlay sits above Sigma's internal canvas layers.
+ * Implementation notes:
+ * - Positions are kept in React state so the chips are part of the normal
+ *   render cycle and don't drift after parent re-renders.
+ * - `sigma.graphToViewport` can return non-finite values before the graph
+ *   has been processed (empty graph at mount time); chips without a valid
+ *   position are simply not rendered that tick.
+ * - Listeners on `afterRender` + camera `updated` cover both initial graph
+ *   load and continuous user pan/zoom.
  */
 export function CommunityLabels() {
 	const sigma = useSigma();
 	const { communities } = useGraphContext();
 	const { colorByCommunity } = useExplorerState();
-	const [, force] = useState(0);
-
-	// Synchronous initial tick so positions are computed after the first paint.
-	useLayoutEffect(() => {
-		force((v) => v + 1);
-	}, []);
+	const [positions, setPositions] = useState<Map<number, ChipPos>>(new Map());
 
 	useEffect(() => {
-		const tick = () => force((v) => v + 1);
-		const camera = sigma.getCamera();
-		camera.on("updated", tick);
-		sigma.on("afterRender", tick);
-		// Trigger immediately in case afterRender already fired before this
-		// effect ran (i.e. graph loaded before CommunityLabels mounted).
-		tick();
-		return () => {
-			camera.off("updated", tick);
-			sigma.off("afterRender", tick);
+		if (communities.length === 0) return;
+
+		const recompute = () => {
+			const next = new Map<number, ChipPos>();
+			for (const c of communities) {
+				try {
+					const pos = sigma.graphToViewport({ x: c.x, y: c.y });
+					if (Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
+						next.set(c.id, { x: pos.x, y: pos.y });
+					}
+				} catch {
+					// graph not ready yet — skip this tick
+				}
+			}
+			setPositions((prev) => {
+				if (prev.size !== next.size) return next;
+				for (const [id, p] of next) {
+					const q = prev.get(id);
+					if (!q || q.x !== p.x || q.y !== p.y) return next;
+				}
+				return prev;
+			});
 		};
-	}, [sigma]);
+
+		const camera = sigma.getCamera();
+		camera.on("updated", recompute);
+		sigma.on("afterRender", recompute);
+		// Kick once on mount so chips show up even if no event has fired yet.
+		recompute();
+
+		return () => {
+			camera.off("updated", recompute);
+			sigma.off("afterRender", recompute);
+		};
+	}, [sigma, communities]);
 
 	if (communities.length === 0) return null;
 
 	return (
 		<div className="pointer-events-none absolute inset-0 z-30">
 			{communities.map((c) => {
-				let x: number;
-				let y: number;
-				try {
-					const pos = sigma.graphToViewport({ x: c.x, y: c.y });
-					// Skip this chip if Sigma hasn't normalised coordinates yet.
-					if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return null;
-					x = pos.x;
-					y = pos.y;
-				} catch {
-					return null;
-				}
-
+				const pos = positions.get(c.id);
+				if (!pos) return null;
 				const color = COMMUNITY_COLORS[c.id % COMMUNITY_COLORS.length];
-				const borderColor = colorByCommunity ? color : "rgba(255,255,255,0.30)";
-				const textColor = colorByCommunity ? color : "#d4d4d8";
+				const borderColor = colorByCommunity ? color : "rgba(255,255,255,0.35)";
+				const textColor = colorByCommunity ? color : "#e4e4e7";
 				return (
 					<div
 						key={c.id}
-						className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider shadow-lg"
+						className="absolute whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider shadow-lg"
 						style={{
-							left: x,
-							top: y,
+							left: 0,
+							top: 0,
+							transform: `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`,
 							borderColor,
 							color: textColor,
-							background: "rgba(15,15,18,0.88)",
+							background: "rgba(15,15,18,0.92)",
+							willChange: "transform",
 						}}
 						title={
 							c.topWords.length > 0
