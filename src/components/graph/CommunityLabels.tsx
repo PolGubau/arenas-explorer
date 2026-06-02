@@ -67,9 +67,9 @@ export function CommunityLabels() {
 			camera.off("updated", recompute);
 			sigma.off("afterRender", recompute);
 		};
-	}, [sigma, communities]);
+	}, [sigma, communities, colorByCommunity]);
 
-	if (communities.length === 0) return null;
+	if (!colorByCommunity || communities.length === 0) return null;
 
 	return (
 		<div className="pointer-events-none absolute inset-0 z-30">
@@ -77,8 +77,6 @@ export function CommunityLabels() {
 				const pos = positions.get(c.id);
 				if (!pos) return null;
 				const color = COMMUNITY_COLORS[c.id % COMMUNITY_COLORS.length];
-				const borderColor = colorByCommunity ? color : "rgba(255,255,255,0.35)";
-				const textColor = colorByCommunity ? color : "#e4e4e7";
 				return (
 					<div
 						key={c.id}
@@ -87,8 +85,8 @@ export function CommunityLabels() {
 							left: 0,
 							top: 0,
 							transform: `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`,
-							borderColor,
-							color: textColor,
+							borderColor: color,
+							color,
 							background: "rgba(15,15,18,0.92)",
 							willChange: "transform",
 						}}

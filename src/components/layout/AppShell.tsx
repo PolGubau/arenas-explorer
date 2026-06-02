@@ -12,6 +12,7 @@ import { MissingPhotosPanel } from "@/components/panel/MissingPhotosPanel";
 import { GraphDataProvider, useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
 import { useGraphData } from "@/hooks/useGraphData";
+import { useImagePreload } from "@/hooks/useImagePreload";
 import {
 	AlertTriangle,
 	Command,
@@ -110,6 +111,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 						<LayerFilter />
 					</div>
 					<GraphCanvas graph={graph} />
+					<ImagePreloaderOverlay />
 					<LegendHint />
 				</section>
 				{/* Desktop side panel */}
@@ -280,6 +282,53 @@ function Footer() {
 				polgubau.com
 			</a>
 		</footer>
+	);
+}
+
+/**
+ * Full-cover overlay shown while the browser warms its image cache. Sigma's
+ * NodeImageProgram would otherwise pop low-res stubs in and out as fetches
+ * resolve; pre-loading first means textures upload from cache and the canvas
+ * looks finished on first paint. Fades out via framer-motion once the hook
+ * reports ready (all images settled or 8s cap reached).
+ */
+function ImagePreloaderOverlay() {
+	const { imagesIndex } = useGraphContext();
+	const { ready, progress, loaded, total } = useImagePreload(imagesIndex);
+	const pct = Math.round(progress * 100);
+
+	return (
+		<AnimatePresence>
+			{!ready && (
+				<motion.div
+					key="preloader"
+					initial={{ opacity: 1 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					transition={{ duration: 0.45, ease: "easeOut" }}
+					className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-[var(--color-bg)]/85 backdrop-blur-sm"
+					aria-hidden={ready}
+				>
+					<div className="flex w-64 max-w-[80%] flex-col items-center gap-3 text-fg-muted">
+						<div className="flex items-center gap-2 text-xs">
+							<Loader2 size={14} className="animate-spin" />
+							<span>Precargando imágenes…</span>
+						</div>
+						<div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+							<motion.div
+								className="h-full bg-fg"
+								initial={{ width: 0 }}
+								animate={{ width: `${pct}%` }}
+								transition={{ duration: 0.2, ease: "linear" }}
+							/>
+						</div>
+						<span className="font-mono text-[10px] tabular-nums text-fg-subtle">
+							{loaded} / {total}
+						</span>
+					</div>
+				</motion.div>
+			)}
+		</AnimatePresence>
 	);
 }
 
