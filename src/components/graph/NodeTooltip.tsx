@@ -3,7 +3,7 @@
 import { DIMENSION_COLORS, DIMENSION_LABELS } from "@/lib/constants";
 import type { Dimension } from "@/types/graph";
 import { useRegisterEvents, useSigma } from "@react-sigma/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface TooltipState {
   x: number;
@@ -13,12 +13,27 @@ interface TooltipState {
   meta?: string;
 }
 
+/**
+ * Tooltip position is updated at most once per animation frame: `mousemovebody`
+ * fires on every pixel, which would otherwise re-render this component 100+
+ * times per second. Latest cursor coords are stashed in a ref and flushed via
+ * rAF, mirroring the hover throttle in GraphEvents.
+ */
 export function NodeTooltip() {
   const sigma = useSigma();
   const register = useRegisterEvents();
   const [tip, setTip] = useState<TooltipState | null>(null);
+  const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const flushPos = () => {
+      rafRef.current = null;
+      const p = pendingPosRef.current;
+      if (!p) return;
+      setTip((t) => (t ? { ...t, x: p.x, y: p.y } : t));
+    };
+
     register({
       enterNode: ({ node, event }) => {
         const graph = sigma.getGraph();
@@ -44,9 +59,16 @@ export function NodeTooltip() {
       },
       leaveNode: () => setTip(null),
       mousemovebody: ({ x, y }) => {
-        setTip((t) => (t ? { ...t, x, y } : t));
+        pendingPosRef.current = { x, y };
+        if (rafRef.current == null) {
+          rafRef.current = requestAnimationFrame(flushPos);
+        }
       },
     });
+
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
   }, [register, sigma]);
 
   if (!tip) return null;
