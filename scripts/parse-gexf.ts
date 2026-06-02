@@ -189,18 +189,116 @@ function splitCsvLine(line: string): string[] {
 	return out.map((s) => s.trim());
 }
 
+// Spanish + Catalan stop-words common in the corpus' transcriptions.
+// Anything matching is dropped before ranking community labels.
+const STOPWORDS = new Set([
+	"de",
+	"del",
+	"la",
+	"el",
+	"los",
+	"las",
+	"un",
+	"una",
+	"unos",
+	"unas",
+	"y",
+	"o",
+	"a",
+	"ante",
+	"con",
+	"contra",
+	"en",
+	"entre",
+	"hacia",
+	"para",
+	"por",
+	"según",
+	"sin",
+	"sobre",
+	"tras",
+	"que",
+	"se",
+	"su",
+	"sus",
+	"lo",
+	"le",
+	"les",
+	"es",
+	"son",
+	"era",
+	"fue",
+	"ser",
+	"ha",
+	"han",
+	"al",
+	"como",
+	"más",
+	"pero",
+	"este",
+	"esta",
+	"estos",
+	"estas",
+	"ese",
+	"esa",
+	"esos",
+	"esas",
+	"des",
+	"no",
+	"si",
+	"sí",
+	"ya",
+	// Catalan
+	"el",
+	"la",
+	"els",
+	"les",
+	"un",
+	"una",
+	"uns",
+	"unes",
+	"i",
+	"o",
+	"a",
+	"amb",
+	"de",
+	"del",
+	"dels",
+	"en",
+	"per",
+	"que",
+	"es",
+	"ès",
+	"són",
+	"ha",
+	"han",
+	"no",
+	"sí",
+]);
+
+function isMeaningfulWord(s: string): boolean {
+	const t = s.trim().toLowerCase();
+	if (t.length < 3) return false;
+	if (/^\d+$/.test(t)) return false;
+	if (STOPWORDS.has(t)) return false;
+	return true;
+}
+
 // Per-community summary used for the in-canvas labels.
-//   - label    → top 1–2 word/clothing nodes by degree
+//   - label    → top vestimenta/transcripcion nodes by degree (vestimenta boosted)
 //   - year     → most frequent año node in the community
 //   - centroid → average (x, y) AFTER layout + expansion + noverlap
-//   - size     → log-scaled by member count, used for label sizing
+//   - size     → member count (used downstream for label sizing)
 function buildCommunitySummaries(graph: Graph): CommunitySummary[] {
+	interface WordEntry {
+		label: string;
+		score: number; // adjusted degree (vestimenta gets a boost)
+	}
 	interface Bucket {
 		ids: string[];
 		sx: number;
 		sy: number;
-		// degree-keyed top labels per relevant dimension
-		words: { label: string; degree: number }[];
+		words: WordEntry[];
 		years: Map<number, number>;
 	}
 	const buckets = new Map<number, Bucket>();
@@ -220,8 +318,11 @@ function buildCommunitySummaries(graph: Graph): CommunitySummary[] {
 		const label = String(attrs.label ?? attrs.title ?? id);
 		const degree = Number(attrs.degree_static ?? graph.degree(id));
 
-		if (dim === "transcripcion" || dim === "vestimenta") {
-			b.words.push({ label, degree });
+		if (dim === "vestimenta") {
+			// Clothing terms are high signal — boost so they win ties.
+			b.words.push({ label, score: degree * 2 + 5 });
+		} else if (dim === "transcripcion" && isMeaningfulWord(label)) {
+			b.words.push({ label, score: degree });
 		} else if (dim === "año") {
 			const y = Number(attrs.year ?? Number.parseInt(label, 10));
 			if (Number.isFinite(y)) {
@@ -233,7 +334,7 @@ function buildCommunitySummaries(graph: Graph): CommunitySummary[] {
 	const summaries: CommunitySummary[] = [];
 	for (const [id, b] of buckets) {
 		const n = b.ids.length;
-		b.words.sort((a, z) => z.degree - a.degree);
+		b.words.sort((a, z) => z.score - a.score);
 		const topWords = b.words.slice(0, 3).map((w) => w.label);
 
 		let year: number | undefined;
@@ -263,7 +364,6 @@ function buildCommunitySummaries(graph: Graph): CommunitySummary[] {
 		});
 	}
 
-	// Stable order — useful for downstream snapshot diffs.
 	summaries.sort((a, z) => a.id - z.id);
 	return summaries;
 }

@@ -5,7 +5,7 @@ import {
   useLoadGraph,
 } from "@react-sigma/core";
 import { MiniMap } from "@react-sigma/minimap";
-import { NodeImageProgram } from "@sigma/node-image";
+import { createNodeImageProgram } from "@sigma/node-image";
 import type Graph from "graphology";
 import { useEffect } from "react";
 import type { Settings } from "sigma/settings";
@@ -13,6 +13,7 @@ import type { NodeDisplayData, PartialButFor } from "sigma/types";
 import "@react-sigma/core/lib/style.css";
 
 import { CameraSync } from "./CameraSync";
+import { CommunityLabels } from "./CommunityLabels";
 import { GraphControls } from "./GraphControls";
 import { GraphEvents } from "./GraphEvents";
 import { GraphReducers } from "./GraphReducers";
@@ -96,7 +97,17 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   defaultNodeType: "circle",
   defaultEdgeType: "line",
   nodeProgramClasses: {
-    image: NodeImageProgram,
+    // keepWithinCircle clips the image to the circular node boundary so the
+    // photo matches the node's circular silhouette. `padding` is intentionally
+    // 0: in @sigma/node-image, padding > 0 crops the IMAGE to a square
+    // inscribed in the circle (filling the corners with the node color) — i.e.
+    // the photo would look square. Community/dimension context for image
+    // nodes is conveyed via the floating CommunityLabels chips instead.
+    image: createNodeImageProgram({
+      padding: 0,
+      keepWithinCircle: true,
+      drawingMode: "background",
+    }),
   },
   defaultDrawNodeHover: drawDarkNodeHover,
   labelColor: { color: "#e4e4e7" },
@@ -142,6 +153,7 @@ export function GraphCanvas({ graph }: GraphCanvasProps) {
       <InitialSelection />
       <GraphControls />
       <NodeTooltip />
+      <CommunityLabels />
       <div className="absolute bottom-16 left-3 z-20 hidden overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-md sm:bottom-20 sm:left-4 sm:block">
         <MiniMap width="140px" height="140px" />
       </div>

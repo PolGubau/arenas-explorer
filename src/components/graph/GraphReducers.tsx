@@ -73,6 +73,11 @@ export function GraphReducers() {
           const communityIdx =
             Number(data.community ?? 0) % COMMUNITY_COLORS.length;
           out.color = COMMUNITY_COLORS[communityIdx];
+          // Switch image nodes to plain circles so the community color is
+          // clearly visible instead of being covered by the photograph.
+          if (data.type === "image") {
+            out.type = "circle";
+          }
         }
 
         const nodeColor = out.color as string;
