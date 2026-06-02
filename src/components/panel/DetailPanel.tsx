@@ -185,7 +185,7 @@ function ImageView({ nodeId }: { nodeId: string }) {
 				icon={<Calendar size={14} />}
 				count={neighbours.mismo_año.length}
 			>
-				<div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+				<div className="grid gap-1.5 grid-cols-[repeat(auto-fill,minmax(64px,1fr))]">
 					{neighbours.mismo_año.slice(0, 32).map((id) => (
 						<RelatedThumb key={id} id={id} />
 					))}

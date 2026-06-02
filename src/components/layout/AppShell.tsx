@@ -115,7 +115,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	return (
 		<div className="flex h-dvh w-screen flex-col bg-[var(--color-bg)]">
 			<Header onOpenPalette={openPalette} onOpenMissing={openMissing} />
-			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(320px,28rem)]">
+			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(300px,22rem)] lg:grid-cols-[1fr_minmax(320px,25rem)] xl:grid-cols-[1fr_minmax(360px,28rem)]">
 				<section
 					className="relative min-h-0 overflow-hidden"
 					aria-label="Grafo interactivo del Fondo Fotográfico Areñas"

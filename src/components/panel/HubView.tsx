@@ -40,9 +40,9 @@ export function HubView({ icon, title, subtitle, photos }: HubViewProps) {
 				</p>
 			) : (
 				<>
-					<div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+					<div className="grid gap-1.5 grid-cols-[repeat(auto-fill,minmax(64px,1fr))]">
 						{visible.map((id) => (
-							<RelatedThumb key={id} id={id} size={72} />
+							<RelatedThumb key={id} id={id} />
 						))}
 					</div>
 					{remaining > 0 && (

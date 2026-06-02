@@ -22,7 +22,7 @@ export function LayerFilter() {
   } = useExplorerState();
 
   return (
-    <div className="scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto sm:flex-wrap">
+    <div className="scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto xl:flex-wrap">
       {ALL_DIMENSIONS.map((d) => (
         <LayerChip
           key={d}
@@ -47,8 +47,8 @@ export function LayerFilter() {
         aria-pressed={colorByCommunity}
         title={colorByCommunity ? "Colorear por dimensión" : "Colorear por comunidad"}
         className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${colorByCommunity
-            ? "border-border-strong bg-[var(--color-bg-overlay)] text-fg"
-            : "border-border bg-transparent text-fg-muted hover:text-fg"
+          ? "border-border-strong bg-[var(--color-bg-overlay)] text-fg"
+          : "border-border bg-transparent text-fg-muted hover:text-fg"
           }`}
       >
         <span
