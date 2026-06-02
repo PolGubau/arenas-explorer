@@ -14,9 +14,8 @@ interface ChipPos {
 /**
  * Floating chips rendered at each community centroid (in graph coords),
  * re-projected to viewport pixels whenever the camera moves or Sigma
- * re-renders. Always visible (independent of the `colorByCommunity` toggle);
- * chip color follows the community palette when the toggle is active,
- * neutral otherwise.
+ * re-renders. Rendered only when the user enabled the `colorByCommunity`
+ * toggle — otherwise the chips just add noise to the default view.
  *
  * Implementation notes:
  * - Positions are kept in React state so the chips are part of the normal
@@ -34,7 +33,7 @@ export function CommunityLabels() {
 	const [positions, setPositions] = useState<Map<number, ChipPos>>(new Map());
 
 	useEffect(() => {
-		if (communities.length === 0) return;
+		if (!colorByCommunity || communities.length === 0) return;
 
 		const recompute = () => {
 			const next = new Map<number, ChipPos>();
