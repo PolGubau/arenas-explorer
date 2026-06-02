@@ -28,6 +28,8 @@ import type {
 	GraphNode,
 	ImageMeta,
 	ImagesIndex,
+	PhotoMeta,
+	PhotoMetaIndex,
 	Relation,
 } from "../src/types/graph";
 
@@ -147,9 +149,79 @@ function assertRelation(value: unknown, edgeRef: string): Relation {
 const ROOT = process.cwd();
 const GEXF_PATH = join(ROOT, "data", "grafo.gexf");
 const CSV_PATH = join(ROOT, "data", "input.csv");
+const PHOTO_META_PATH = join(ROOT, "data", "fons_pujol_mobil.json");
 const IMAGES_DIR = join(ROOT, "public", "images-thumb");
 const IMAGES_PUBLIC_PREFIX = "/images-thumb";
 const OUT_DIR = join(ROOT, "public", "data");
+
+// PUJOL JSON `image` field comes as `IAAH_MOBIL_PUJOL_1`; graph node ids are
+// `IAAH_MOBIL_PUJOL_001.jpg` (3-digit zero-padded + .jpg). Normalise to the
+// graph id so the sidecar is keyed identically to imagesIndex.
+function normalizePhotoKey(image: string): string | null {
+	if (!image) return null;
+	const lastUnderscore = image.lastIndexOf("_");
+	if (lastUnderscore < 0) return null;
+	const prefix = image.slice(0, lastUnderscore);
+	const num = image.slice(lastUnderscore + 1);
+	if (!/^\d+$/.test(num)) return null;
+	return `${prefix}_${num.padStart(3, "0")}.jpg`;
+}
+
+// Source JSON row shape (mirrors data/fons_pujol_mobil.json verbatim, incl.
+// the upstream "oservations" typo and the "last control" space).
+interface PhotoMetaRow {
+	id?: number;
+	archive?: string;
+	format?: string;
+	material?: string;
+	author?: string;
+	title?: string;
+	description?: string;
+	state?: string;
+	damages?: string;
+	manipulations?: string;
+	oservations?: string;
+	"last control"?: string;
+	camera?: string;
+	image?: string;
+}
+
+function pickNonEmpty<T extends string>(value: T | undefined): T | undefined {
+	if (value == null) return undefined;
+	const trimmed = String(value).trim();
+	return trimmed.length === 0 ? undefined : (trimmed as T);
+}
+
+function rowToPhotoMeta(row: PhotoMetaRow): PhotoMeta {
+	// Drop empty strings so the JSON payload stays compact and the UI can do
+	// `meta.author && …` without re-checking for whitespace.
+	const out: PhotoMeta = {};
+	const archive = pickNonEmpty(row.archive);
+	const format = pickNonEmpty(row.format);
+	const material = pickNonEmpty(row.material);
+	const author = pickNonEmpty(row.author);
+	const title = pickNonEmpty(row.title);
+	const description = pickNonEmpty(row.description);
+	const state = pickNonEmpty(row.state);
+	const damages = pickNonEmpty(row.damages);
+	const manipulations = pickNonEmpty(row.manipulations);
+	const observations = pickNonEmpty(row.oservations);
+	const lastControl = pickNonEmpty(row["last control"]);
+	const camera = pickNonEmpty(row.camera);
+	if (archive) out.archive = archive;
+	if (format) out.format = format;
+	if (material) out.material = material;
+	if (author) out.author = author;
+	if (title) out.title = title;
+	if (description) out.description = description;
+	if (state) out.state = state;
+	if (damages) out.damages = damages;
+	if (manipulations) out.manipulations = manipulations;
+	if (observations) out.observations = observations;
+	if (lastControl) out.lastControl = lastControl;
+	if (camera) out.camera = camera;
+	return out;
+}
 
 // Strips a UTF-8 BOM (U+FEFF) prefix — Excel and other editors add one on
 // export and it silently corrupts the first header name.
@@ -610,16 +682,57 @@ function main() {
 		);
 	}
 
+	// Photo metadata sidecar — kept out of the GEXF / graph.json so the rich
+	// bibliographic data (long descriptions, authorship, conservation notes)
+	// is fetched lazily and the layout pipeline stays unaffected by content edits.
+	const photoMeta: PhotoMetaIndex = {};
+	if (existsSync(PHOTO_META_PATH)) {
+		console.log("→ Reading fons_pujol_mobil.json…");
+		const rows = JSON.parse(
+			readFileSync(PHOTO_META_PATH, "utf8"),
+		) as PhotoMetaRow[];
+		const graphNodeIds = new Set<string>();
+		graph.forEachNode((id) => graphNodeIds.add(id));
+		let matched = 0;
+		let skipped = 0;
+		for (const row of rows) {
+			const key = normalizePhotoKey(row.image ?? "");
+			if (!key) {
+				skipped++;
+				continue;
+			}
+			if (!graphNodeIds.has(key)) {
+				skipped++;
+				continue;
+			}
+			// On collision (the source file has one duplicated `image` row) keep
+			// the first occurrence — rows are authored sequentially and the
+			// later one is typically a refinement of the same record.
+			if (photoMeta[key]) continue;
+			photoMeta[key] = rowToPhotoMeta(row);
+			matched++;
+		}
+		console.log(
+			`  ${matched} photo nodes enriched, ${skipped} rows skipped (missing/unmatched)`,
+		);
+	} else {
+		console.log("  No data/fons_pujol_mobil.json — skipping photo metadata");
+	}
+
 	mkdirSync(OUT_DIR, { recursive: true });
 	writeFileSync(join(OUT_DIR, "graph.json"), JSON.stringify(graphData));
 	writeFileSync(
 		join(OUT_DIR, "images-index.json"),
 		JSON.stringify(imagesIndex),
 	);
+	writeFileSync(join(OUT_DIR, "photo-meta.json"), JSON.stringify(photoMeta));
 	console.log(
 		`✓ Wrote ${OUT_DIR}/graph.json (${graphData.nodes.length} nodes, ${graphData.edges.length} edges)`,
 	);
 	console.log(`✓ Wrote ${OUT_DIR}/images-index.json`);
+	console.log(
+		`✓ Wrote ${OUT_DIR}/photo-meta.json (${Object.keys(photoMeta).length} entries)`,
+	);
 }
 
 try {

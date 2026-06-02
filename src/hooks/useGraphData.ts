@@ -1,13 +1,19 @@
 "use client";
 
 import { DIMENSION_COLORS, nodeSize } from "@/lib/constants";
-import type { CommunitySummary, GraphData, ImagesIndex } from "@/types/graph";
+import type {
+	CommunitySummary,
+	GraphData,
+	ImagesIndex,
+	PhotoMetaIndex,
+} from "@/types/graph";
 import Graph from "graphology";
 import { useEffect, useState } from "react";
 
 interface UseGraphDataResult {
 	graph: Graph | null;
 	imagesIndex: ImagesIndex;
+	photoMeta: PhotoMetaIndex;
 	communities: CommunitySummary[];
 	loading: boolean;
 	error: Error | null;
@@ -21,6 +27,7 @@ interface UseGraphDataResult {
 export function useGraphData(): UseGraphDataResult {
 	const [graph, setGraph] = useState<Graph | null>(null);
 	const [imagesIndex, setImagesIndex] = useState<ImagesIndex>({});
+	const [photoMeta, setPhotoMeta] = useState<PhotoMetaIndex>({});
 	const [communities, setCommunities] = useState<CommunitySummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
@@ -30,9 +37,12 @@ export function useGraphData(): UseGraphDataResult {
 
 		(async () => {
 			try {
-				const [graphRes, indexRes] = await Promise.all([
+				// photo-meta.json is non-critical (only enriches the detail panel)
+				// so a missing file degrades gracefully instead of aborting the load.
+				const [graphRes, indexRes, metaRes] = await Promise.all([
 					fetch("/data/graph.json"),
 					fetch("/data/images-index.json"),
+					fetch("/data/photo-meta.json"),
 				]);
 				if (!graphRes.ok) throw new Error(`graph.json: ${graphRes.status}`);
 				if (!indexRes.ok)
@@ -40,6 +50,9 @@ export function useGraphData(): UseGraphDataResult {
 
 				const data = (await graphRes.json()) as GraphData;
 				const index = (await indexRes.json()) as ImagesIndex;
+				const meta = metaRes.ok
+					? ((await metaRes.json()) as PhotoMetaIndex)
+					: {};
 				if (cancelled) return;
 
 				const g = new Graph({ multi: false, type: "undirected" });
@@ -104,6 +117,7 @@ export function useGraphData(): UseGraphDataResult {
 				if (cancelled) return;
 				setGraph(g);
 				setImagesIndex(index);
+				setPhotoMeta(meta);
 				setCommunities(data.communities ?? []);
 				setLoading(false);
 			} catch (e) {
@@ -118,5 +132,5 @@ export function useGraphData(): UseGraphDataResult {
 		};
 	}, []);
 
-	return { graph, imagesIndex, communities, loading, error };
+	return { graph, imagesIndex, photoMeta, communities, loading, error };
 }

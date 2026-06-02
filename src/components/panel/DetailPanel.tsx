@@ -158,15 +158,22 @@ function EmptyState() {
 }
 
 function ImageView({ nodeId }: { nodeId: string }) {
-	const { graph, imagesIndex } = useGraphContext();
+	const { graph, imagesIndex, photoMeta } = useGraphContext();
 	const meta = imagesIndex[nodeId];
+	const photo = photoMeta[nodeId];
 	const year = graph.getNodeAttribute(nodeId, "year") as number | undefined;
 	const confianza = graph.getNodeAttribute(nodeId, "confianza") as number | undefined;
 	const neighbours = useNodeNeighbors(graph, nodeId);
 
 	return (
 		<>
-			<PhotoPreview id={nodeId} meta={meta} year={year} confianza={confianza} />
+			<PhotoPreview
+				id={nodeId}
+				meta={meta}
+				photoMeta={photo}
+				year={year}
+				confianza={confianza}
+			/>
 
 			<ConnectionSection
 				title="Vestimenta"

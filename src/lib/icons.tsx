@@ -31,4 +31,9 @@ export {
   ChevronUp,
   ChevronDown,
   PanelRightOpen,
+  User,
+  Camera,
+  FileText,
+  Quote,
+  FileQuestion,
 } from "lucide-react";

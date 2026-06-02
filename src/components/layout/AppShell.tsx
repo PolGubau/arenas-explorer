@@ -8,6 +8,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { CommandPalette } from "@/components/CommandPalette";
 import { LayerFilter } from "@/components/graph/LayerFilter";
 import { DetailPanel } from "@/components/panel/DetailPanel";
+import { MissingMetaPanel } from "@/components/panel/MissingMetaPanel";
 import { MissingPhotosPanel } from "@/components/panel/MissingPhotosPanel";
 import { GraphDataProvider, useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
@@ -16,13 +17,14 @@ import { useImagePreload } from "@/hooks/useImagePreload";
 import {
 	AlertTriangle,
 	Command,
+	FileQuestion,
 	ImageOff,
 	Info,
 	Loader2,
 	PanelRightOpen,
 	Search,
 } from "@/lib/icons";
-import type { ImagesIndex } from "@/types/graph";
+import type { ImagesIndex, PhotoMetaIndex } from "@/types/graph";
 
 const GraphCanvas = dynamic(
 	() =>
@@ -33,7 +35,8 @@ const GraphCanvas = dynamic(
 );
 
 export function AppShell() {
-	const { graph, imagesIndex, communities, loading, error } = useGraphData();
+	const { graph, imagesIndex, photoMeta, communities, loading, error } =
+		useGraphData();
 
 	if (error) return <ErrorState message={error.message} />;
 	if (loading || !graph) return <GlobalLoading />;
@@ -42,6 +45,7 @@ export function AppShell() {
 		<GraphDataProvider
 			graph={graph}
 			imagesIndex={imagesIndex}
+			photoMeta={photoMeta}
 			communities={communities}
 		>
 			<Suspense fallback={<GlobalLoading />}>
@@ -55,6 +59,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const [missingOpen, setMissingOpen] = useState(false);
+	const [missingMetaOpen, setMissingMetaOpen] = useState(false);
 	const { nodeId, setSelected } = useExplorerState();
 	const hasSelection = nodeId != null && graph.hasNode(nodeId);
 
@@ -63,8 +68,10 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	// (740-node walks) would otherwise run on app startup for nothing.
 	const paletteEverOpened = useRef(false);
 	const missingEverOpened = useRef(false);
+	const missingMetaEverOpened = useRef(false);
 	if (paletteOpen) paletteEverOpened.current = true;
 	if (missingOpen) missingEverOpened.current = true;
+	if (missingMetaOpen) missingMetaEverOpened.current = true;
 
 	const openPalette = useCallback(() => setPaletteOpen(true), []);
 	const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -77,6 +84,8 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	}, [setSelected]);
 	const openMissing = useCallback(() => setMissingOpen(true), []);
 	const closeMissing = useCallback(() => setMissingOpen(false), []);
+	const openMissingMeta = useCallback(() => setMissingMetaOpen(true), []);
+	const closeMissingMeta = useCallback(() => setMissingMetaOpen(false), []);
 
 	// On mobile, auto-open the bottom sheet whenever a new node is selected.
 	useEffect(() => {
@@ -114,7 +123,7 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 
 	return (
 		<div className="flex h-dvh w-screen flex-col bg-[var(--color-bg)]">
-			<Header onOpenPalette={openPalette} onOpenMissing={openMissing} />
+			<Header onOpenPalette={openPalette} onOpenMissing={openMissing} onOpenMissingMeta={openMissingMeta} />
 			<main className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_minmax(300px,22rem)] lg:grid-cols-[1fr_minmax(320px,25rem)] xl:grid-cols-[1fr_minmax(360px,28rem)]">
 				<section
 					className="relative min-h-0 overflow-hidden"
@@ -163,6 +172,9 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 			)}
 			{missingEverOpened.current && (
 				<MissingPhotosPanel open={missingOpen} onClose={closeMissing} />
+			)}
+			{missingMetaEverOpened.current && (
+				<MissingMetaPanel open={missingMetaOpen} onClose={closeMissingMeta} />
 			)}
 		</div>
 	);
@@ -221,12 +233,15 @@ function MobileSheet({
 function Header({
 	onOpenPalette,
 	onOpenMissing,
+	onOpenMissingMeta,
 }: {
 	onOpenPalette: () => void;
 	onOpenMissing: () => void;
+	onOpenMissingMeta: () => void;
 }) {
-	const { graph, imagesIndex } = useGraphContext();
+	const { graph, imagesIndex, photoMeta } = useGraphContext();
 	const missingCount = useMissingCount(graph, imagesIndex);
+	const missingMetaCount = useMissingMetaCount(graph, photoMeta);
 
 	return (
 		<header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-3 py-2.5 sm:px-5 sm:py-3">
@@ -241,6 +256,19 @@ function Header({
 				</div>
 			</div>
 			<div className="flex shrink-0 items-center gap-2 sm:gap-3">
+				{missingMetaCount > 0 && (
+					<button
+						type="button"
+						onClick={onOpenMissingMeta}
+						title={`${missingMetaCount} foto${missingMetaCount === 1 ? "" : "s"} sin metadatos`}
+						aria-label="Ver fotos sin metadatos"
+						className="group flex items-center gap-1.5 rounded-md border border-border -elevated px-2 py-1.5 text-[11px] text-fg-muted transition-colors hover:border-strong hover:text-fg"
+					>
+						<FileQuestion size={12} />
+						<span className="font-mono tabular-nums">{missingMetaCount}</span>
+						<span className="hidden sm:inline">sin metadatos</span>
+					</button>
+				)}
 				{missingCount > 0 && (
 					<button
 						type="button"
@@ -283,6 +311,21 @@ function useMissingCount(
 		});
 		return n;
 	}, [graph, imagesIndex]);
+}
+
+function useMissingMetaCount(
+	graph: Graph,
+	photoMeta: PhotoMetaIndex,
+): number {
+	return useMemo(() => {
+		let n = 0;
+		graph.forEachNode((id, attrs) => {
+			if (attrs.dimension !== "imagen") return;
+			const m = photoMeta[id];
+			if (!m?.title || !m?.description) n++;
+		});
+		return n;
+	}, [graph, photoMeta]);
 }
 
 function Footer() {
