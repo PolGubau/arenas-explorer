@@ -11,6 +11,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
  */
 const MAX_WAIT_MS = 8_000;
 
+// Browsers cap parallel HTTP/1.1 connections at ~6 per origin. Firing all
+// requests at once would queue most of them in the network stack and stall
+// the first paint of the canvas; chunking keeps the pipeline busy without
+// saturating it and gives the bytes for the first visible nodes priority.
+const CONCURRENCY = 8;
+
 interface PreloadResult {
 	loaded: number;
 	total: number;
@@ -48,20 +54,30 @@ export function useImagePreload(imagesIndex: ImagesIndex): PreloadResult {
 		if (total === 0) return;
 
 		const images: HTMLImageElement[] = [];
-		const bump = () => {
-			if (cancelledRef.current) return;
-			setLoaded((n) => n + 1);
-		};
+		let cursor = 0;
 
-		for (const url of urls) {
+		const startNext = () => {
+			if (cancelledRef.current) return;
+			if (cursor >= urls.length) return;
+			const url = urls[cursor++];
+			if (!url) return;
 			const img = new Image();
 			img.decoding = "async";
 			img.loading = "eager";
-			img.onload = bump;
-			img.onerror = bump;
+			const done = () => {
+				if (cancelledRef.current) return;
+				setLoaded((n) => n + 1);
+				startNext();
+			};
+			img.onload = done;
+			img.onerror = done;
 			img.src = url;
 			images.push(img);
-		}
+		};
+
+		// Seed the pool: `CONCURRENCY` requests in flight at any time. Each
+		// completion picks up the next URL until the queue drains.
+		for (let i = 0; i < CONCURRENCY; i++) startNext();
 
 		const timer = window.setTimeout(() => {
 			if (cancelledRef.current) return;

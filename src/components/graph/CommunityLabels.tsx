@@ -4,68 +4,63 @@ import { useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
 import { COMMUNITY_COLORS } from "@/lib/constants";
 import { useSigma } from "@react-sigma/core";
-import { useEffect, useState } from "react";
-
-interface ChipPos {
-	x: number;
-	y: number;
-}
+import { useEffect, useRef } from "react";
 
 /**
- * Floating chips rendered at each community centroid (in graph coords),
- * re-projected to viewport pixels whenever the camera moves or Sigma
- * re-renders. Rendered only when the user enabled the `colorByCommunity`
- * toggle — otherwise the chips just add noise to the default view.
+ * Floating chips at each community centroid, re-projected to viewport pixels
+ * whenever the camera moves. Mounted only when `colorByCommunity` is on.
  *
- * Implementation notes:
- * - Positions are kept in React state so the chips are part of the normal
- *   render cycle and don't drift after parent re-renders.
- * - `sigma.graphToViewport` can return non-finite values before the graph
- *   has been processed (empty graph at mount time); chips without a valid
- *   position are simply not rendered that tick.
- * - Listeners on `afterRender` + camera `updated` cover both initial graph
- *   load and continuous user pan/zoom.
+ * Perf notes:
+ * - Positions are written **directly to the DOM** via refs, bypassing React
+ *   reconciliation. During a continuous pan, the camera emits `updated` at
+ *   ~60Hz; routing through `setState` would force 60 renders/sec per chip.
+ * - We listen only to `camera.updated`. Sigma's `afterRender` would double-
+ *   fire on every camera change and is used here just as a one-shot fallback
+ *   for the case where the graph is still being indexed on mount.
+ * - `sigma.graphToViewport` can return non-finite values before the graph is
+ *   ready; chips without a valid position stay `visibility: hidden`.
  */
 export function CommunityLabels() {
 	const sigma = useSigma();
 	const { communities } = useGraphContext();
 	const { colorByCommunity } = useExplorerState();
-	const [positions, setPositions] = useState<Map<number, ChipPos>>(new Map());
+	const chipRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
 	useEffect(() => {
 		if (!colorByCommunity || communities.length === 0) return;
 
-		const recompute = () => {
-			const next = new Map<number, ChipPos>();
+		const project = () => {
 			for (const c of communities) {
+				const el = chipRefs.current.get(c.id);
+				if (!el) continue;
+				let projected: { x: number; y: number } | null = null;
 				try {
-					const pos = sigma.graphToViewport({ x: c.x, y: c.y });
-					if (Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
-						next.set(c.id, { x: pos.x, y: pos.y });
-					}
+					const p = sigma.graphToViewport({ x: c.x, y: c.y });
+					if (Number.isFinite(p.x) && Number.isFinite(p.y)) projected = p;
 				} catch {
-					// graph not ready yet — skip this tick
+					/* graph not ready yet */
+				}
+				if (projected) {
+					el.style.transform = `translate3d(${projected.x}px, ${projected.y}px, 0) translate(-50%, -50%)`;
+					el.style.visibility = "visible";
+				} else {
+					el.style.visibility = "hidden";
 				}
 			}
-			setPositions((prev) => {
-				if (prev.size !== next.size) return next;
-				for (const [id, p] of next) {
-					const q = prev.get(id);
-					if (!q || q.x !== p.x || q.y !== p.y) return next;
-				}
-				return prev;
-			});
 		};
 
 		const camera = sigma.getCamera();
-		camera.on("updated", recompute);
-		sigma.on("afterRender", recompute);
-		// Kick once on mount so chips show up even if no event has fired yet.
-		recompute();
+		camera.on("updated", project);
+		const onceAfterRender = () => {
+			sigma.off("afterRender", onceAfterRender);
+			project();
+		};
+		sigma.on("afterRender", onceAfterRender);
+		project();
 
 		return () => {
-			camera.off("updated", recompute);
-			sigma.off("afterRender", recompute);
+			camera.off("updated", project);
+			sigma.off("afterRender", onceAfterRender);
 		};
 	}, [sigma, communities, colorByCommunity]);
 
@@ -74,17 +69,18 @@ export function CommunityLabels() {
 	return (
 		<div className="pointer-events-none absolute inset-0 z-30">
 			{communities.map((c) => {
-				const pos = positions.get(c.id);
-				if (!pos) return null;
 				const color = COMMUNITY_COLORS[c.id % COMMUNITY_COLORS.length];
 				return (
 					<div
 						key={c.id}
+						ref={(el) => {
+							chipRefs.current.set(c.id, el);
+						}}
 						className="absolute whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider shadow-lg"
 						style={{
 							left: 0,
 							top: 0,
-							transform: `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`,
+							visibility: "hidden",
 							borderColor: color,
 							color,
 							background: "rgba(15,15,18,0.92)",

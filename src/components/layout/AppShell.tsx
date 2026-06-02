@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type Graph from "graphology";
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CommandPalette } from "@/components/CommandPalette";
 import { LayerFilter } from "@/components/graph/LayerFilter";
@@ -57,6 +57,14 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 	const [missingOpen, setMissingOpen] = useState(false);
 	const { nodeId, setSelected } = useExplorerState();
 	const hasSelection = nodeId != null && graph.hasNode(nodeId);
+
+	// Track "ever-opened" so we only mount the heavy palette/missing panels
+	// after the user has first invoked them. Their internal `useMemo` indexes
+	// (740-node walks) would otherwise run on app startup for nothing.
+	const paletteEverOpened = useRef(false);
+	const missingEverOpened = useRef(false);
+	if (paletteOpen) paletteEverOpened.current = true;
+	if (missingOpen) missingEverOpened.current = true;
 
 	const openPalette = useCallback(() => setPaletteOpen(true), []);
 	const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -144,8 +152,12 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 				)}
 			</AnimatePresence>
 
-			<CommandPalette open={paletteOpen} onClose={closePalette} />
-			<MissingPhotosPanel open={missingOpen} onClose={closeMissing} />
+			{paletteEverOpened.current && (
+				<CommandPalette open={paletteOpen} onClose={closePalette} />
+			)}
+			{missingEverOpened.current && (
+				<MissingPhotosPanel open={missingOpen} onClose={closeMissing} />
+			)}
 		</div>
 	);
 }

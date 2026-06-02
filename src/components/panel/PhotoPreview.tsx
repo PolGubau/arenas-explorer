@@ -23,7 +23,11 @@ export function PhotoPreview({ id, meta, year, confianza }: PhotoPreviewProps) {
 					<img
 						src={meta?.url}
 						alt={meta?.caption || id}
+						width={512}
+						height={512}
 						loading="lazy"
+						decoding="async"
+						fetchPriority="high"
 						onError={() => setErrored(true)}
 						className="h-full w-full object-cover"
 					/>

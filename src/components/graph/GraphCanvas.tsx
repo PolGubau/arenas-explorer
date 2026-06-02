@@ -120,7 +120,10 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   // `size` is derived from `degree` (see nodeSize), this single threshold
   // gives us importance- and zoom-aware label filtering for free.
   labelDensity: 0.5,
-  labelGridCellSize: 100,
+  // Coarser grid → fewer cells to evaluate when placing labels every frame.
+  // 150 is large enough to noticeably cut CPU on wide screens without leaving
+  // visible holes where hubs would otherwise compete for the same cell.
+  labelGridCellSize: 150,
   labelRenderedSizeThreshold: 18,
   edgeLabelSize: 10,
   enableEdgeEvents: false,

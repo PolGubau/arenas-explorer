@@ -2,7 +2,7 @@
 
 import type { CommunitySummary, ImagesIndex } from "@/types/graph";
 import type Graph from "graphology";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 interface GraphDataValue {
   graph: Graph;
@@ -23,11 +23,13 @@ export function GraphDataProvider({
   communities: CommunitySummary[];
   children: React.ReactNode;
 }) {
-  return (
-    <Ctx.Provider value={{ graph, imagesIndex, communities }}>
-      {children}
-    </Ctx.Provider>
+  // Stabilise the context value so consumers (DetailPanel, CommandPalette,
+  // Header, etc.) don't re-render every time the parent's state changes.
+  const value = useMemo<GraphDataValue>(
+    () => ({ graph, imagesIndex, communities }),
+    [graph, imagesIndex, communities],
   );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useGraphContext(): GraphDataValue {

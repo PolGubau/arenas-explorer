@@ -36,7 +36,11 @@ export function RelatedThumb({ id, size }: RelatedThumbProps) {
         <img
           src={meta.url}
           alt={meta.caption || id}
+          width={size ?? 96}
+          height={size ?? 96}
           loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
         />
       ) : (
