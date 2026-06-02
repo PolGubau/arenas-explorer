@@ -68,7 +68,13 @@ function MainLayout({ graph }: { graph: Graph; imagesIndex?: ImagesIndex }) {
 
 	const openPalette = useCallback(() => setPaletteOpen(true), []);
 	const closePalette = useCallback(() => setPaletteOpen(false), []);
-	const closePanel = useCallback(() => setPanelOpen(false), []);
+	// Closing the panel (X button, mobile drag handle, mobile backdrop, Esc)
+	// must also clear the selection so the URL, the graph highlight and the
+	// "Ver detalles" FAB stay in sync.
+	const closePanel = useCallback(() => {
+		setSelected(null);
+		setPanelOpen(false);
+	}, [setSelected]);
 	const openMissing = useCallback(() => setMissingOpen(true), []);
 	const closeMissing = useCallback(() => setMissingOpen(false), []);
 

@@ -9,7 +9,9 @@
 		"build": "next build",
 		"start": "next start",
 		"optimize:images": "tsx scripts/optimize-images.ts",
-		"pipeline:images": "npm run optimize:images && npx tsx scripts/parse-gexf.ts"
+		"pipeline:images": "npm run optimize:images && npx tsx scripts/parse-gexf.ts",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"dependencies": {
 		"@react-sigma/core": "^5.0.6",
