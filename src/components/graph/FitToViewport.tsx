@@ -8,14 +8,16 @@ import { useEffect } from "react";
  * Higher ratio = more zoomed-out → nodes appear smaller and less crowded.
  *
  *  < 900 px  → 1.6  (small laptop / portrait tablet)
- *  < 1280 px → 1.25 (medium laptop)
- *  ≥ 1280 px → 1.0  (large desktop monitor)
+ *  < 1280 px → 1.3  (medium laptop)
+ *  < 1920 px → 1.15 (large laptop / standard desktop)
+ *  ≥ 1920 px → 1.0  (wide / 4K monitor)
  *
  * Exported so GraphControls can reuse it for "Centrar vista".
  */
 export function computeAdaptiveRatio(canvasWidth: number): number {
   if (canvasWidth < 900) return 1.6;
-  if (canvasWidth < 1280) return 1.25;
+  if (canvasWidth < 1280) return 1.3;
+  if (canvasWidth < 1920) return 1.15;
   return 1.0;
 }
 
@@ -32,8 +34,8 @@ export function FitToViewport() {
     const { width } = sigma.getDimensions();
     const ratio = computeAdaptiveRatio(width);
     sigma.getCamera().setState({ x: 0.5, y: 0.5, ratio, angle: 0 });
-  // sigma is stable across renders — this effect runs exactly once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // sigma is stable across renders — this effect runs exactly once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;

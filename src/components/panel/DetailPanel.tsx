@@ -3,7 +3,7 @@
 import { useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
 import { useNodeNeighbors } from "@/hooks/useNodeNeighbors";
-import { DIMENSION_LABELS } from "@/lib/constants";
+import { DIMENSION_LABELS, getClothingLabel } from "@/lib/constants";
 import { Calendar, ImageIcon, Shirt, TypeIcon, X } from "@/lib/icons";
 import type { Dimension } from "@/types/graph";
 import { AnimatePresence, motion } from "framer-motion";
@@ -120,7 +120,7 @@ function ClothingView({ nodeId }: { nodeId: string }) {
 	return (
 		<HubView
 			icon={<Shirt size={20} />}
-			title={label}
+			title={getClothingLabel(label)}
 			subtitle={`Prenda detectada en ${lleva_puesto.length} fotografía${lleva_puesto.length === 1 ? "" : "s"}`}
 			photos={lleva_puesto}
 		/>
@@ -182,7 +182,7 @@ function ImageView({ nodeId }: { nodeId: string }) {
 			>
 				<div className="flex flex-wrap gap-1.5">
 					{neighbours.lleva_puesto.map((id) => (
-						<Chip key={id} id={id} label={id} dimension="vestimenta" />
+						<Chip key={id} id={id} label={getClothingLabel(id)} dimension="vestimenta" />
 					))}
 				</div>
 			</ConnectionSection>

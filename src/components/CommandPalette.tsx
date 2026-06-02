@@ -2,7 +2,7 @@
 
 import { useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
-import { DIMENSION_COLORS, DIMENSION_LABELS } from "@/lib/constants";
+import { DIMENSION_COLORS, DIMENSION_LABELS, getClothingLabel } from "@/lib/constants";
 import { CornerDownLeft, Search } from "@/lib/icons";
 import type { Dimension } from "@/types/graph";
 import { AnimatePresence, motion } from "framer-motion";
@@ -42,10 +42,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 	const index = useMemo<Hit[]>(() => {
 		const out: Hit[] = [];
 		graph.forEachNode((id, attrs) => {
+			const dimension = (attrs.dimension as Dimension) ?? "imagen";
+			const rawLabel = String(attrs.label ?? id);
 			out.push({
 				id,
-				label: String(attrs.label ?? id),
-				dimension: (attrs.dimension as Dimension) ?? "imagen",
+				label: dimension === "vestimenta" ? getClothingLabel(rawLabel) : rawLabel,
+				dimension,
 				degree: (attrs.degree as number) ?? graph.degree(id),
 			});
 		});

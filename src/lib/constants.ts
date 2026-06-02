@@ -76,20 +76,66 @@ export const DEFAULT_HIDDEN_RELATIONS: ReadonlySet<Relation> = new Set([
 	"mismo_año",
 ]);
 
-// Jerarquía visual por dimensión: imagen = contenido primario, año = anclas
-// temporales, vestimenta/transcripción = tags secundarios. Curvas sub-lineales
-// con techos apretados evitan que los hubs (años con cientos de fotos, palabras
-// muy frecuentes) dominen el canvas y compliquen el noverlap del build.
+/**
+ * Mapa de traducción de prendas: ID inglés (clave en el grafo) → etiqueta española.
+ * Se usa en el sidebar y en el tooltip del grafo para mostrar el nombre en español.
+ */
+export const CLOTHING_LABELS: Record<string, string> = {
+	"baroque coat":       "Abrigo barroco",
+	"bow tie":            "Pajarita",
+	"cassock":            "Sotana",
+	"cloak":              "Capa",
+	"crinoline dress":    "Vestido de crinolina",
+	"evening gown":       "Vestido de noche",
+	"fan":                "Abanico",
+	"flamenco dress":     "Traje de flamenca",
+	"folk costume":       "Traje regional",
+	"gloves":             "Guantes",
+	"handbag":            "Bolso",
+	"historical costume": "Traje histórico",
+	"kimono":             "Kimono",
+	"laurel crown":       "Corona de laurel",
+	"mantilla":           "Mantilla",
+	"medieval costume":   "Traje medieval",
+	"military uniform":   "Uniforme militar",
+	"morning coat":       "Chaqué",
+	"naval uniform":      "Uniforme naval",
+	"nun habit":          "Hábito de monja",
+	"overcoat":           "Gabán",
+	"renaissance dress":  "Vestido renacentista",
+	"sailor suit":        "Traje de marinero",
+	"shawl":              "Chal",
+	"tailcoat":           "Frac",
+	"three-piece suit":   "Traje de tres piezas",
+	"top hat":            "Chistera",
+	"traditional costume":"Traje tradicional",
+	"turban":             "Turbante",
+	"tuxedo":             "Esmoquin",
+	"veil":               "Velo",
+	"walking cane":       "Bastón",
+};
+
+/** Devuelve la etiqueta española de una prenda, o el ID original si no hay traducción. */
+export function getClothingLabel(id: string): string {
+	return CLOTHING_LABELS[id] ?? id;
+}
+
+// Jerarquía visual por importancia (grado). Bases bajas + pendientes altas:
+// las hojas (la mayoría de imágenes y todas las transcripciones) ocupan poco
+// espacio, los hubs (años con muchas fotos, vestimentas muy frecuentes) crecen
+// notablemente para actuar como anclas visibles. El spread leaf→hub pasa de
+// ~1.7× a ~5×, así la importancia se *ve*. FA2 (adjustSizes) + noverlap
+// reaccionan a estos radios → hojas se compactan, hubs ganan halo de aire.
 export function nodeSize(dimension: Dimension, degree: number): number {
 	const d = Math.max(0, degree);
 	switch (dimension) {
 		case "imagen":
-			return 7 + Math.log1p(d) * 2.5;
+			return 3 + Math.log1p(d) * 3.0;
 		case "año":
-			return 8 + Math.log1p(d) * 1.6;
+			return 4 + Math.log1p(d) * 3.5;
 		case "vestimenta":
-			return 4 + Math.log1p(d) * 1.0;
+			return 2 + Math.log1p(d) * 2.5;
 		case "transcripcion":
-			return 3 + Math.log1p(d) * 0.8;
+			return 2 + Math.log1p(d) * 1.5;
 	}
 }

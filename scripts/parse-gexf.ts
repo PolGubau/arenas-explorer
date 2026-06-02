@@ -98,20 +98,21 @@ const NOVERLAP_SPEED = 4;
 const THUMB_EXTENSION = "webp";
 const THUMB_SUFFIX_VARIANTS = ["", "_ma"] as const;
 
-// Mirrors `nodeSize` in src/lib/constants.ts so the layout (FA2 with
-// adjustSizes + noverlap) reasons about the same radii Sigma renders.
-// Per-dimension curves create a content hierarchy: photos > years > clothing > words.
+// Mirrors `nodeSize` in src/lib/constants.ts — keep both in sync. Low bases
+// + steep log slopes create a strong importance hierarchy: leaves (~3-5) sit
+// quietly, hubs (~15-20) act as anchors. FA2 (adjustSizes) + noverlap consume
+// these radii directly, so the layout naturally spaces hubs apart.
 function nodeSize(dimension: Dimension, degree: number): number {
 	const d = Math.max(0, degree);
 	switch (dimension) {
 		case "imagen":
-			return 7 + Math.log1p(d) * 2.5;
+			return 3 + Math.log1p(d) * 3.0;
 		case "año":
-			return 8 + Math.log1p(d) * 1.6;
+			return 4 + Math.log1p(d) * 3.5;
 		case "vestimenta":
-			return 4 + Math.log1p(d) * 1.0;
+			return 2 + Math.log1p(d) * 2.5;
 		case "transcripcion":
-			return 3 + Math.log1p(d) * 0.8;
+			return 2 + Math.log1p(d) * 1.5;
 	}
 }
 

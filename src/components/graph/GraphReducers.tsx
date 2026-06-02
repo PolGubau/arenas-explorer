@@ -5,6 +5,7 @@ import {
   COMMUNITY_COLORS,
   RELATION_COLORS,
   RELATION_IDLE_COLORS,
+  getClothingLabel,
 } from "@/lib/constants";
 import { useGraphStore } from "@/store/graphStore";
 import type { Dimension, Relation } from "@/types/graph";
@@ -62,6 +63,10 @@ export function GraphReducers() {
         } = ctxRef.current;
         const dim = (data.dimension ?? "imagen") as Dimension;
         const out = { ...data };
+
+        if (dim === "vestimenta" && typeof out.label === "string") {
+          out.label = getClothingLabel(out.label);
+        }
 
         if (!activeLayers.has(dim)) {
           out.hidden = true;

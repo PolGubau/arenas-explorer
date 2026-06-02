@@ -1,6 +1,6 @@
 "use client";
 
-import { DIMENSION_COLORS, DIMENSION_LABELS } from "@/lib/constants";
+import { DIMENSION_COLORS, DIMENSION_LABELS, getClothingLabel } from "@/lib/constants";
 import type { Dimension } from "@/types/graph";
 import { useRegisterEvents, useSigma } from "@react-sigma/core";
 import { useEffect, useRef, useState } from "react";
@@ -49,10 +49,11 @@ export function NodeTooltip() {
           meta = `${graph.degree(node)} conexiones`;
         }
 
+        const rawLabel = String(attrs.label ?? node);
         setTip({
           x: event.x,
           y: event.y,
-          label: String(attrs.label ?? node),
+          label: dimension === "vestimenta" ? getClothingLabel(rawLabel) : rawLabel,
           dimension,
           meta,
         });
