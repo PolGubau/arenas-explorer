@@ -69,8 +69,8 @@ const FA2_REFINE_ITERATIONS = 500;
 const FA2_BASE_SETTINGS = {
 	linLogMode: true,
 	outboundAttractionDistribution: true,
-	gravity: 0.08,
-	scalingRatio: 8,
+	gravity: 0.03,
+	scalingRatio: 25,
 	strongGravityMode: false,
 	barnesHutOptimize: true,
 	barnesHutTheta: 0.8,
@@ -81,7 +81,7 @@ const FA2_BASE_SETTINGS = {
 // Community expansion factor — after FA2, each community centroid is pushed
 // radially away from the global centroid by this multiplier.  0 = off, 1 = full
 // distance duplication.  0.5 gives visible separation without destroying shape.
-const COMMUNITY_EXPANSION_K = 0.5;
+const COMMUNITY_EXPANSION_K = 1.4;
 
 // Anti-collision pass: ratio is derived from the layout's actual coordinate
 // span so node sizes map cleanly into graph units regardless of FA2 scale.

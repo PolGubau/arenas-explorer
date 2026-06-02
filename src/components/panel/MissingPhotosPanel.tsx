@@ -89,7 +89,7 @@ export function MissingPhotosPanel({ open, onClose }: MissingPhotosPanelProps) {
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: -8, opacity: 0 }}
 						transition={{ duration: 0.14 }}
-						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong -elevated shadow-2xl"
+						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong bg-[#161410] shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center gap-2.5 border-b border-border px-4 py-3">

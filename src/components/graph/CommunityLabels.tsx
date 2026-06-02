@@ -2,7 +2,7 @@
 
 import { useGraphContext } from "@/context/GraphDataContext";
 import { useExplorerState } from "@/hooks/useExplorerState";
-import { COMMUNITY_COLORS } from "@/lib/constants";
+import { COMMUNITY_COLORS, getClothingLabel } from "@/lib/constants";
 import { useSigma } from "@react-sigma/core";
 import { useEffect, useRef } from "react";
 
@@ -88,11 +88,11 @@ export function CommunityLabels() {
 						}}
 						title={
 							c.topWords.length > 0
-								? `${c.topWords.join(", ")}${c.year ? ` · ${c.year}` : ""}`
+								? `${c.topWords.map(getClothingLabel).join(", ")}${c.year ? ` · ${c.year}` : ""}`
 								: undefined
 						}
 					>
-						{c.label}
+						{getClothingLabel(c.label)}
 					</div>
 				);
 			})}

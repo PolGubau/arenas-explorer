@@ -25,12 +25,17 @@ interface Hit {
 	label: string;
 	dimension: Dimension;
 	degree: number;
+	subtitle?: string;
+	// Pre-lowercased haystack covering label + id + (for photos) title,
+	// description, caption, author, toponyms, people and archive fields.
+	// Computed once so per-keystroke filtering stays a simple substring scan.
+	searchText: string;
 }
 
 const MAX_RESULTS = 40;
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
-	const { graph } = useGraphContext();
+	const { graph, imagesIndex, photoMeta } = useGraphContext();
 	const { setSelected } = useExplorerState();
 	const [query, setQuery] = useState("");
 	const deferredQuery = useDeferredValue(query);
@@ -44,16 +49,42 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 		graph.forEachNode((id, attrs) => {
 			const dimension = (attrs.dimension as Dimension) ?? "imagen";
 			const rawLabel = String(attrs.label ?? id);
+			const label =
+				dimension === "vestimenta" ? getClothingLabel(rawLabel) : rawLabel;
+
+			let subtitle: string | undefined;
+			const haystack: string[] = [label, id];
+
+			if (dimension === "imagen") {
+				const meta = photoMeta[id];
+				const image = imagesIndex[id];
+				if (meta?.title) {
+					subtitle = meta.title;
+					haystack.push(meta.title);
+				}
+				if (meta?.description) haystack.push(meta.description);
+				if (meta?.author) haystack.push(meta.author);
+				if (meta?.archive) haystack.push(meta.archive);
+				if (meta?.observations) haystack.push(meta.observations);
+				if (image?.caption) haystack.push(image.caption);
+				if (image?.toponims) haystack.push(image.toponims);
+				if (image?.noms_propis) haystack.push(image.noms_propis);
+				if (image?.nom_fons) haystack.push(image.nom_fons);
+				if (image?.nom_arxiu) haystack.push(image.nom_arxiu);
+			}
+
 			out.push({
 				id,
-				label: dimension === "vestimenta" ? getClothingLabel(rawLabel) : rawLabel,
+				label,
 				dimension,
 				degree: (attrs.degree as number) ?? graph.degree(id),
+				subtitle,
+				searchText: haystack.join(" \u0001 ").toLowerCase(),
 			});
 		});
 		out.sort((a, b) => b.degree - a.degree);
 		return out;
-	}, [graph]);
+	}, [graph, imagesIndex, photoMeta]);
 
 	const results = useMemo<Hit[]>(() => {
 		const q = deferredQuery.trim().toLowerCase();
@@ -62,7 +93,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 		for (let i = 0; i < index.length && out.length < MAX_RESULTS; i++) {
 			const h = index[i];
 			if (!h) continue;
-			if (h.label.toLowerCase().includes(q) || h.id.toLowerCase().includes(q)) {
+			if (h.searchText.includes(q)) {
 				out.push(h);
 			}
 		}
@@ -130,7 +161,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 						animate={{ y: 0, opacity: 1 }}
 						exit={{ y: -8, opacity: 0 }}
 						transition={{ duration: 0.14 }}
-						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong -elevated shadow-2xl"
+						className="w-full max-w-xl overflow-hidden rounded-xl border border-border-strong bg-[#161410] shadow-2xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
@@ -141,7 +172,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 								value={query}
 								onChange={(e) => setQuery(e.target.value)}
 								onKeyDown={onKey}
-								placeholder="Buscar nodo: foto, año, prenda o palabra…"
+								placeholder="Buscar por título, descripción, autor, lugar…"
 								className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
 								spellCheck={false}
 								autoComplete="off"
@@ -176,7 +207,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 											className="h-2 w-2 shrink-0 rounded-full"
 											style={{ backgroundColor: DIMENSION_COLORS[h.dimension] }}
 										/>
-										<span className="min-w-0 flex-1 truncate">{h.label}</span>
+										<span className="min-w-0 flex-1">
+											<span className="block truncate">{h.label}</span>
+											{h.subtitle && (
+												<span className="block truncate text-[11px] text-fg-subtle">
+													{h.subtitle}
+												</span>
+											)}
+										</span>
 										<span className="hidden text-[10px] uppercase tracking-wide text-fg-subtle sm:inline">
 											{DIMENSION_LABELS[h.dimension]}
 										</span>
