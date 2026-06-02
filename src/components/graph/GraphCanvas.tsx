@@ -14,6 +14,7 @@ import "@react-sigma/core/lib/style.css";
 
 import { CameraSync } from "./CameraSync";
 import { CommunityLabels } from "./CommunityLabels";
+import { FitToViewport } from "./FitToViewport";
 import { GraphControls } from "./GraphControls";
 import { GraphEvents } from "./GraphEvents";
 import { GraphReducers } from "./GraphReducers";
@@ -132,6 +133,9 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   hideLabelsOnMove: true,
   minCameraRatio: 0.05,
   maxCameraRatio: 8,
+  // Nodes shrink faster when zooming out (exponent > 0.5 = default √).
+  // This reduces crowding at high ratios without affecting the base sizes.
+  zoomToSizeRatioFunction: (ratio: number) => Math.pow(ratio, 0.65),
   zIndex: true,
 };
 
@@ -165,6 +169,7 @@ export function GraphCanvas({ graph }: GraphCanvasProps) {
       settings={SIGMA_SETTINGS}
     >
       <LoadGraph graph={graph} />
+      <FitToViewport />
       <GraphReducers />
       <GraphEvents />
       <CameraSync />

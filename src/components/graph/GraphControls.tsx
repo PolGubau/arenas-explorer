@@ -3,6 +3,8 @@
 import { Maximize2, Minimize2, RotateCcw, ZoomIn, ZoomOut } from "@/lib/icons";
 import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
 
+import { computeAdaptiveRatio } from "./FitToViewport";
+
 interface CtrlBtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
   children: React.ReactNode;
@@ -23,7 +25,7 @@ function CtrlBtn({ label, children, ...rest }: CtrlBtnProps) {
 }
 
 export function GraphControls() {
-  const { zoomIn, zoomOut, reset } = useCamera({ duration: 300, factor: 1.5 });
+  const { zoomIn, zoomOut } = useCamera({ duration: 300, factor: 1.5 });
   const { isFullScreen, toggle } = useFullScreen();
   const sigma = useSigma();
 
@@ -38,8 +40,11 @@ export function GraphControls() {
       <CtrlBtn
         label="Centrar vista"
         onClick={() => {
-          reset();
-          sigma.getCamera().animate({ x: 0.5, y: 0.5, ratio: 1.1 }, { duration: 400 });
+          const { width } = sigma.getDimensions();
+          sigma.getCamera().animate(
+            { x: 0.5, y: 0.5, ratio: computeAdaptiveRatio(width), angle: 0 },
+            { duration: 400 },
+          );
         }}
       >
         <RotateCcw size={16} />
