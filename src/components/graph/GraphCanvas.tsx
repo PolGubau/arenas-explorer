@@ -4,13 +4,14 @@ import {
   SigmaContainer,
   useLoadGraph,
 } from "@react-sigma/core";
+import "@react-sigma/core/lib/style.css";
 import { MiniMap } from "@react-sigma/minimap";
-import { createNodeImageProgram } from "@sigma/node-image";
 import type Graph from "graphology";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { NodeProgramType } from "sigma/rendering";
+import { NodeCircleProgram } from "sigma/rendering";
 import type { Settings } from "sigma/settings";
 import type { NodeDisplayData, PartialButFor } from "sigma/types";
-import "@react-sigma/core/lib/style.css";
 
 import { CameraSync } from "./CameraSync";
 import { CommunityLabels } from "./CommunityLabels";
@@ -97,19 +98,6 @@ const SIGMA_SETTINGS: Partial<Settings> = {
   allowInvalidContainer: true,
   defaultNodeType: "circle",
   defaultEdgeType: "line",
-  nodeProgramClasses: {
-    // keepWithinCircle clips the image to the circular node boundary so the
-    // photo matches the node's circular silhouette. `padding` is intentionally
-    // 0: in @sigma/node-image, padding > 0 crops the IMAGE to a square
-    // inscribed in the circle (filling the corners with the node color) — i.e.
-    // the photo would look square. Community/dimension context for image
-    // nodes is conveyed via the floating CommunityLabels chips instead.
-    image: createNodeImageProgram({
-      padding: 0,
-      keepWithinCircle: true,
-      drawingMode: "background",
-    }),
-  },
   defaultDrawNodeHover: drawDarkNodeHover,
   labelColor: { color: "#e4e4e7" },
   labelSize: 12,
@@ -147,6 +135,48 @@ function LoadGraph({ graph }: { graph: Graph }) {
   return null;
 }
 
+/**
+ * Resolves the program used to draw photo nodes.
+ *
+ * `@sigma/node-image` calls `createNodeImageProgram()` at module evaluation,
+ * and that function reads MAX_TEXTURE_SIZE off `canvas.getContext("webgl")`
+ * without checking for null. Mobile browsers cap the number of live WebGL
+ * contexts and can hand back null, which turns the import into an uncaught
+ * TypeError that takes the whole page down. Loading it lazily inside a
+ * try/catch keeps the failure local, falling back to plain circles.
+ */
+function useImageNodeProgram(): NodeProgramType | null {
+  const [program, setProgram] = useState<NodeProgramType | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    import("@sigma/node-image")
+      .then(({ createNodeImageProgram }) => {
+        // keepWithinCircle clips the image to the circular node boundary so
+        // the photo matches the node's circular silhouette. `padding` is
+        // intentionally 0: in @sigma/node-image, padding > 0 crops the IMAGE
+        // to a square inscribed in the circle (filling the corners with the
+        // node color) — i.e. the photo would look square. Community/dimension
+        // context for image nodes is conveyed via the floating CommunityLabels
+        // chips instead.
+        return createNodeImageProgram({
+          padding: 0,
+          keepWithinCircle: true,
+          drawingMode: "background",
+        }) as NodeProgramType;
+      })
+      .catch(() => NodeCircleProgram as NodeProgramType)
+      .then((resolved) => {
+        if (!cancelled) setProgram(() => resolved);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return program;
+}
+
 /** Only true after mount and only on viewports ≥ 640 px (Tailwind `sm`). */
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -162,11 +192,24 @@ function useIsDesktop() {
 
 export function GraphCanvas({ graph }: GraphCanvasProps) {
   const isDesktop = useIsDesktop();
+  const imageProgram = useImageNodeProgram();
+
+  const settings = useMemo<Partial<Settings>>(
+    () =>
+      imageProgram
+        ? { ...SIGMA_SETTINGS, nodeProgramClasses: { image: imageProgram } }
+        : SIGMA_SETTINGS,
+    [imageProgram],
+  );
+
+  // Sigma reads nodeProgramClasses when the renderer is created, so wait for
+  // the image program before mounting the container.
+  if (!imageProgram) return null;
 
   return (
     <SigmaContainer
       style={{ width: "100%", height: "100%", background: "transparent" }}
-      settings={SIGMA_SETTINGS}
+      settings={settings}
     >
       <LoadGraph graph={graph} />
       <FitToViewport />
